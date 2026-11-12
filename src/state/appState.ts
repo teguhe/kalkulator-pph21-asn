@@ -26,6 +26,8 @@ class AppState {
   public quotaState: QuotaState;
   public toasts: ToastMessage[] = [];
   public selectedBpa2NPWP: string = 'ALL'; // 'ALL' or specific NPWP
+  public selectedBpa2PeriodMonth: number = 0; // 0 = default to latest akhir periode
+  public selectedHasilRekonsiliasiMonth: number = 0; // 0 = default to latest akhir periode
 
   private listeners: (() => void)[] = [];
   private toastListeners: (() => void)[] = [];
@@ -102,6 +104,42 @@ class AppState {
   public setSelectedBpa2NPWP(npwp: string): void {
     this.selectedBpa2NPWP = npwp;
     this.notify();
+  }
+
+  public setSelectedBpa2PeriodMonth(month: number): void {
+    this.selectedBpa2PeriodMonth = month;
+    this.notify();
+  }
+
+  public setSelectedHasilRekonsiliasiMonth(month: number): void {
+    this.selectedHasilRekonsiliasiMonth = month;
+    this.notify();
+  }
+
+  public getActiveBpa2Result() {
+    const list = this.calculation.daftar_akhir_periode || [];
+    if (list.length === 0) {
+      return this.calculation.akhir_periode;
+    }
+    if (this.selectedBpa2PeriodMonth > 0) {
+      const match = list.find(p => p.bulan_akhir === this.selectedBpa2PeriodMonth);
+      if (match) return match;
+    }
+    // Default to the latest period
+    return list[list.length - 1];
+  }
+
+  public getActiveHasilRekonsiliasiResult() {
+    const list = this.calculation.daftar_akhir_periode || [];
+    if (list.length === 0) {
+      return this.calculation.akhir_periode;
+    }
+    if (this.selectedHasilRekonsiliasiMonth > 0) {
+      const match = list.find(p => p.bulan_akhir === this.selectedHasilRekonsiliasiMonth);
+      if (match) return match;
+    }
+    // Default to the latest period
+    return list[list.length - 1];
   }
 
   public showToast(type: ToastMessage['type'], title: string, message: string): void {

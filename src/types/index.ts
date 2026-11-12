@@ -85,11 +85,17 @@ export interface LapisanPajakDetail {
 }
 
 export interface HasilAkhirPeriode {
+  bulan_mulai: number;
   bulan_akhir: number;
+  nama_bulan_mulai: string;
   nama_bulan_akhir: string;
+  kode_masa: string; // e.g. '01 - 04' or '01 - 12'
   jumlah_bulan: number;
   total_bruto_akumulasi: number;
   total_gaji_akumulasi: number;
+  total_tpp_akumulasi?: number;
+  total_honor1_akumulasi?: number;
+  total_honor2_akumulasi?: number;
   biaya_jabatan: number;
   max_biaya_jabatan: number;
   iuran_pensiun: number;
@@ -104,6 +110,7 @@ export interface HasilAkhirPeriode {
   total_pajak_sudah_dipotong_tahunan: number;
   selisih_tahunan: number; // pph21_pasal17_setahun - total_pajak_sudah_dipotong_tahunan
   lapisan_breakdown: LapisanPajakDetail[];
+  rekap_bendahara_periode?: RekapitulasiBendahara[];
 }
 
 export interface RekapitulasiBendahara {
@@ -117,6 +124,7 @@ export interface RekapitulasiBendahara {
 
 export interface RingkasanTahunan {
   hasil_bulanan: HasilBulan[];
+  daftar_akhir_periode: HasilAkhirPeriode[];
   akhir_periode?: HasilAkhirPeriode;
   total_bruto_setahun: number;
   total_pajak_dipotong_setahun: number;

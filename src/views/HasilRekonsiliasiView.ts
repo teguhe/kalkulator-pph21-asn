@@ -3,7 +3,8 @@ import { formatRupiah, formatNumber } from '../utils/formatters';
 
 export function renderHasilRekonsiliasiView(): string {
   const { calculation, dataset } = appState;
-  const akhir = calculation.akhir_periode;
+  const akhir = appState.getActiveHasilRekonsiliasiResult();
+  const daftarAkhir = calculation.daftar_akhir_periode || [];
 
   const totalBruto = calculation.total_bruto_setahun;
   const totalDipotong = calculation.total_pajak_dipotong_setahun;
@@ -41,6 +42,7 @@ export function renderHasilRekonsiliasiView(): string {
   // Monthly table rows
   const monthlyRowsHtml = calculation.hasil_bulanan.map(m => {
     const isAkhir = m.is_akhir_periode;
+    const apMatch = daftarAkhir.find(p => p.bulan_akhir === m.bulan);
     const diff = m.selisih;
     const diffClass = diff > 0 ? 'text-rose-600 font-bold' : diff < 0 ? 'text-amber-600 font-bold' : 'text-slate-500';
 
@@ -48,13 +50,13 @@ export function renderHasilRekonsiliasiView(): string {
       <tr class="hover:bg-slate-50 transition border-b border-slate-100 ${isAkhir ? 'bg-amber-50/40 font-semibold' : ''}">
         <td class="py-3 px-4 text-xs">
           <div class="font-bold text-slate-800">${m.nama_bulan}</div>
-          ${isAkhir ? '<span class="text-[10px] text-amber-700 bg-amber-100 border border-amber-200 px-1.5 py-0.2 rounded font-bold">Akhir Periode</span>' : ''}
+          ${isAkhir ? `<span class="text-[10px] text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded font-bold">Akhir Periode (${apMatch ? apMatch.kode_masa : 'Masa ' + m.bulan})</span>` : ''}
         </td>
         <td class="py-3 px-4 text-xs font-mono text-right text-slate-900">${formatRupiah(m.bruto_total)}</td>
         <td class="py-3 px-4 text-xs font-mono text-right text-slate-700">${formatRupiah(m.pajak_sudah_dipotong)}</td>
         <td class="py-3 px-4 text-xs text-center">
           ${isAkhir 
-            ? '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">Pasal 17 Tahunan</span>' 
+            ? `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">Pasal 17 (${apMatch ? apMatch.kode_masa : 'Tahunan'})</span>` 
             : `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">TER ${m.ter_rate}%</span>`}
         </td>
         <td class="py-3 px-4 text-xs font-mono text-right text-blue-700 font-bold">${formatRupiah(m.pph21_terutang)}</td>
@@ -166,24 +168,66 @@ export function renderHasilRekonsiliasiView(): string {
             <h3 class="text-sm sm:text-base font-bold text-white mb-1">Analisis Selisih & Rekonsiliasi Fiskal PMK 168/2023</h3>
             <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
               ${isKurangBayar 
-                ? `Terjadi <strong>Kurang Potong sebesar ${formatRupiah(selisihTahunan)}</strong>. Hal ini terjadi karena komponen penghasilan seperti Gaji dan TPP dipotong secara terpisah oleh masing-masing bendahara dengan lapisan tarif efektif yang lebih rendah pada slip bulanan. Saat seluruh penghasilan digabungkan secara akumulatif di akhir tahun, total Penghasilan Kena Pajak (PKP) mencapai <strong>${formatRupiah(akhir?.pkp || 0)}</strong> yang menyentuh lapisan tarif progresif Pasal 17 (15% atau lebih tinggi). Selisih ini adalah penyesuaian sah yang harus diperhitungkan pada masa pajak terakhir.`
+                ? `Terjadi <strong>Kurang Potong sebesar ${formatRupiah(selisihTahunan)}</strong> pada rekapitulasi akhir tahun. Hal ini terjadi karena komponen penghasilan seperti Gaji dan TPP dipotong secara terpisah oleh masing-masing bendahara dengan lapisan tarif efektif yang lebih rendah pada slip bulanan. Saat seluruh penghasilan digabungkan secara akumulatif di akhir tahun, total Penghasilan Kena Pajak (PKP) mencapai <strong>${formatRupiah(akhir?.pkp || 0)}</strong> yang menyentuh lapisan tarif progresif Pasal 17 (15% atau lebih tinggi). Selisih ini adalah penyesuaian sah yang harus diperhitungkan pada masa pajak terakhir.`
                 : isLebihBayar
                 ? `Terjadi <strong>Lebih Potong sebesar ${formatRupiah(Math.abs(selisihTahunan))}</strong>. Pemotongan pajak bulanan yang dilakukan sebelumnya melebihi total PPh 21 Pasal 17 terutang tahunan. Kelebihan ini dapat diperhitungkan/dikembalikan oleh bendahara pemotong.`
                 : `Penghitungan pajak PPh 21 Anda <strong>Nihil (Sempurna)</strong>. Jumlah pajak yang dipotong sepanjang tahun tepat sama dengan PPh 21 Pasal 17 yang terutang.`}
+              ${daftarAkhir.length > 1 ? `<br><span class="inline-block mt-2 font-semibold text-amber-300">Catatan: Terdeteksi ${daftarAkhir.length} akhir periode perhitungan pajak (${daftarAkhir.map(d => `Masa ${d.kode_masa} [${d.nama_bulan_akhir}]`).join(' dan ')}). Setiap periode memiliki rekonsiliasi Pasal 17 dan bukti potong BPA2 tersendiri.</span>` : ''}
             </p>
           </div>
         </div>
       </div>
 
+      <!-- Period Switcher Tabs if multiple akhir periode exist -->
+      ${daftarAkhir.length > 1 ? `
+        <div class="bg-indigo-50/80 border border-indigo-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div class="flex items-center gap-2.5">
+            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-xs shrink-0">${daftarAkhir.length}</span>
+            <div>
+              <div class="text-xs font-bold text-indigo-950">Tersedia ${daftarAkhir.length} Titik Akhir Periode Rekonsiliasi Pajak</div>
+              <div class="text-[11px] text-indigo-700">Pilih tab masa pajak untuk meninjau rincian perhitungan Pasal 17 periode tersebut:</div>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2 shrink-0">
+            ${daftarAkhir.map(da => {
+              const isActive = akhir && da.bulan_akhir === akhir.bulan_akhir;
+              return `
+                <button 
+                  type="button"
+                  class="btn-rekonsiliasi-period px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                    isActive 
+                      ? 'bg-indigo-700 text-white shadow-sm ring-2 ring-indigo-400' 
+                      : 'bg-white hover:bg-indigo-100 text-indigo-900 border border-indigo-200 shadow-xs'
+                  }"
+                  data-month="${da.bulan_akhir}"
+                >
+                  <span>Masa ${da.kode_masa} (${da.nama_bulan_akhir})</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded font-mono ${isActive ? 'bg-indigo-800 text-white' : 'bg-indigo-100 text-indigo-800'}">
+                    ${da.jumlah_bulan} Bln
+                  </span>
+                </button>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      ` : ''}
+
       <!-- Detail Rekonsiliasi Akhir Periode (Pasal 17) -->
       ${akhir ? `
         <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
-          <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-slate-100 gap-2">
             <div class="flex items-center gap-2">
               <span class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-800 flex items-center justify-center font-bold text-xs">P17</span>
-              <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Perhitungan Rinci Akhir Periode (Bulan ${akhir.nama_bulan_akhir})</h3>
+              <div>
+                <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                  Perhitungan Rinci Akhir Periode (Masa ${akhir.kode_masa}: ${akhir.nama_bulan_mulai} s.d. ${akhir.nama_bulan_akhir})
+                </h3>
+                <div class="text-[11px] text-slate-500">
+                  Maksimal Biaya Jabatan Periode Ini: <strong>${formatRupiah(akhir.max_biaya_jabatan)}</strong> (${akhir.jumlah_bulan} bulan x Rp 500.000)
+                </div>
+              </div>
             </div>
-            <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-full">
+            <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-full self-start sm:self-auto">
               Periode: ${akhir.jumlah_bulan} Bulan Kerja
             </span>
           </div>
@@ -192,11 +236,11 @@ export function renderHasilRekonsiliasiView(): string {
             <!-- Left: Pengurang, Neto, PTKP, PKP -->
             <div class="space-y-3">
               <div class="flex justify-between items-center py-2 border-b border-slate-100 text-xs">
-                <span class="text-slate-600">Total Penghasilan Bruto Akumulatif:</span>
+                <span class="text-slate-600">Total Penghasilan Bruto Akumulatif (${akhir.jumlah_bulan} Bulan):</span>
                 <span class="font-bold font-mono text-slate-900">${formatRupiah(akhir.total_bruto_akumulasi)}</span>
               </div>
               <div class="flex justify-between items-center py-2 border-b border-slate-100 text-xs">
-                <span class="text-slate-600">Biaya Jabatan (5% maks Rp 500.000/bln):</span>
+                <span class="text-slate-600">Biaya Jabatan (5% maks Rp 500.000/bln x ${akhir.jumlah_bulan} bln):</span>
                 <span class="font-bold font-mono text-rose-600">- ${formatRupiah(akhir.biaya_jabatan)}</span>
               </div>
               <div class="flex justify-between items-center py-2 border-b border-slate-100 text-xs">
@@ -239,7 +283,7 @@ export function renderHasilRekonsiliasiView(): string {
                   </tbody>
                   <tfoot class="bg-slate-100 font-bold text-xs border-t border-slate-200">
                     <tr>
-                      <td colspan="3" class="py-2.5 px-3 text-slate-800">Total PPh 21 Terutang Setahun:</td>
+                      <td colspan="3" class="py-2.5 px-3 text-slate-800">Total PPh 21 Terutang Masa ${akhir.kode_masa}:</td>
                       <td class="py-2.5 px-3 text-right font-mono text-blue-800 text-sm">${formatRupiah(akhir.pph21_pasal17_setahun)}</td>
                     </tr>
                   </tfoot>
@@ -253,6 +297,14 @@ export function renderHasilRekonsiliasiView(): string {
                 <div class="flex justify-between font-bold text-slate-900 border-t border-slate-200 pt-1">
                   <span>PPh 21 Terutang Masa Terakhir (${akhir.nama_bulan_akhir}):</span>
                   <span class="font-mono text-blue-700">${formatRupiah(akhir.pph21_terutang_bulan_terakhir)}</span>
+                </div>
+                <div class="flex justify-between text-slate-500 pt-0.5">
+                  <span>Pajak telah dipotong slip s.d. bulan ini:</span>
+                  <span class="font-mono">${formatRupiah(akhir.total_pajak_sudah_dipotong_tahunan)}</span>
+                </div>
+                <div class="flex justify-between font-bold border-t border-slate-200 pt-1 ${akhir.selisih_tahunan > 0 ? 'text-rose-700' : akhir.selisih_tahunan < 0 ? 'text-amber-700' : 'text-emerald-700'}">
+                  <span>Selisih Periode Masa ${akhir.kode_masa}:</span>
+                  <span class="font-mono">${akhir.selisih_tahunan > 0 ? `+${formatRupiah(akhir.selisih_tahunan)}` : formatRupiah(akhir.selisih_tahunan)}</span>
                 </div>
               </div>
             </div>

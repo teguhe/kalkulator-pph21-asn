@@ -4,8 +4,11 @@ import { formatRupiah, formatNPWP, formatDateIndo, formatNumber } from '../utils
 export function renderBpa2View(): string {
   const { dataset, calculation, selectedBpa2NPWP } = appState;
   const p = dataset.pegawai;
-  const akhir = calculation.akhir_periode;
-  const rekapList = calculation.rekap_bendahara;
+  const akhir = appState.getActiveBpa2Result();
+  const daftarAkhir = calculation.daftar_akhir_periode || [];
+  const rekapList = (akhir && akhir.rekap_bendahara_periode && akhir.rekap_bendahara_periode.length > 0)
+    ? akhir.rekap_bendahara_periode
+    : calculation.rekap_bendahara;
 
   // Filter based on selected NPWP if user selects specific bendahara
   let currentPemotongTitle = p.instansi.nama_instansi || 'Dinas Komunikasi dan Informatika';
@@ -22,29 +25,38 @@ export function renderBpa2View(): string {
     currentPemotongNPWP = filteredRekap.npwp_bendahara;
   }
 
-  // Values
-  const brutoTotal = akhir ? akhir.total_bruto_akumulasi : calculation.total_bruto_setahun;
-  const gajiTotal = akhir ? akhir.total_gaji_akumulasi : (calculation.hasil_bulanan.reduce((a, b) => a + b.komponen.k1_bruto, 0));
-  const tppTotal = calculation.hasil_bulanan.reduce((a, b) => a + b.komponen.k2_bruto, 0);
-  const honor1Total = calculation.hasil_bulanan.reduce((a, b) => a + b.komponen.k3_bruto, 0);
-  const honor2Total = calculation.hasil_bulanan.reduce((a, b) => a + b.komponen.k4_bruto, 0);
+  const currentYear = new Date().getFullYear();
+  const bulanAkhirStr = akhir ? String(akhir.bulan_akhir).padStart(2, '0') : '12';
+  const kodeMasa = akhir ? akhir.kode_masa : '01 - 12';
+  const nomorBpa2 = `1.1-${bulanAkhirStr}.${String(currentYear).slice(-2)}-0000108`;
+  const tanggalHariIni = formatDateIndo();
 
-  const biayaJabatan = akhir ? akhir.biaya_jabatan : Math.min(Math.floor(brutoTotal * 0.05), 6000000);
+  // Values specific to the selected Akhir Periode
+  const brutoTotal = akhir ? akhir.total_bruto_akumulasi : calculation.total_bruto_setahun;
+  const gajiTotal = akhir ? akhir.total_gaji_akumulasi : 0;
+  const tppTotal = akhir ? (akhir.total_tpp_akumulasi || 0) : 0;
+  const honor1Total = akhir ? (akhir.total_honor1_akumulasi || 0) : 0;
+  const honor2Total = akhir ? (akhir.total_honor2_akumulasi || 0) : 0;
+
+  const maxBiayaJabatan = akhir ? akhir.max_biaya_jabatan : 6000000;
+  const biayaJabatan = akhir ? akhir.biaya_jabatan : Math.min(Math.floor(brutoTotal * 0.05), maxBiayaJabatan);
   const iuranPensiun = akhir ? akhir.iuran_pensiun : Math.floor(gajiTotal * ((p.persen_iuran_pensiun || 4.75) / 100));
-  const totalPengurang = biayaJabatan + iuranPensiun;
+  const totalPengurang = akhir ? akhir.total_pengurang : (biayaJabatan + iuranPensiun);
   const penghasilanNeto = akhir ? akhir.penghasilan_neto : Math.max(0, brutoTotal - totalPengurang);
   const ptkp = akhir ? akhir.ptkp : 67500000;
   const pkp = akhir ? akhir.pkp : Math.max(0, Math.floor((penghasilanNeto - ptkp) / 1000) * 1000);
   const pph21Setahun = akhir ? akhir.pph21_pasal17_setahun : calculation.total_pph21_terutang_setahun;
-  const pph21Sebelumnya = akhir ? akhir.pajak_terutang_sebelumnya : (calculation.hasil_bulanan.slice(0, 11).reduce((a, b) => a + b.pph21_terutang, 0));
+  const pph21Sebelumnya = akhir ? akhir.pajak_terutang_sebelumnya : 0;
   const pph21TerutangMasaAkhir = akhir ? akhir.pph21_terutang_bulan_terakhir : (pph21Setahun - pph21Sebelumnya);
-  const selisihTahunan = calculation.total_selisih_setahun;
-
-  const currentYear = new Date().getFullYear();
-  const nomorBpa2 = `1.1-12.${String(currentYear).slice(-2)}-0000108`;
-  const tanggalHariIni = formatDateIndo();
 
   const isEmpty = !p.nama && brutoTotal === 0;
+
+  // Period Options for BPA2
+  const periodOptionsHtml = daftarAkhir.map(da => `
+    <option value="${da.bulan_akhir}" ${(akhir && akhir.bulan_akhir === da.bulan_akhir) ? 'selected' : ''}>
+      Masa ${da.kode_masa} (${da.nama_bulan_akhir} - ${da.jumlah_bulan} Bln)
+    </option>
+  `).join('');
 
   // NPWP filter options
   const npwpOptionsHtml = `
@@ -79,7 +91,13 @@ export function renderBpa2View(): string {
       <!-- Toolbar (Cetak & Filter) - Hidden in Print -->
       <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs no-print">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Masa Pajak Formulir BPA2</label>
+              <select id="select-bpa2-period" class="w-full px-3 py-1.5 text-xs font-bold border border-indigo-300 rounded-lg bg-indigo-50/70 text-indigo-900 focus:ring-2 focus:ring-indigo-500 outline-none">
+                ${periodOptionsHtml}
+              </select>
+            </div>
             <div>
               <label class="block text-xs font-semibold text-slate-700 mb-1">Entitas Pemotong Pajak</label>
               <select id="select-bpa2-npwp" class="w-full px-3 py-1.5 text-xs font-medium border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
@@ -99,11 +117,11 @@ export function renderBpa2View(): string {
           </div>
 
           <div class="flex items-center gap-2 pt-2 lg:pt-0 shrink-0">
-            <button id="btn-download-bpa2-html" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl border border-slate-300 transition shadow-xs" title="Unduh file dokumen HTML mandiri yang siap dibuka dan dicetak kapan saja secara offline">
+            <button id="btn-download-bpa2-html" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl border border-slate-300 transition shadow-xs cursor-pointer" title="Unduh file dokumen HTML mandiri yang siap dibuka dan dicetak kapan saja secara offline">
               <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
               <span>Unduh File HTML</span>
             </button>
-            <button id="btn-print-bpa2" class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-sm transition">
+            <button id="btn-print-bpa2" class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-sm transition cursor-pointer">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
               </svg>
@@ -132,7 +150,7 @@ export function renderBpa2View(): string {
                 BAGI PEGAWAI TETAP / APARATUR SIPIL NEGARA
               </div>
               <div class="text-[10px] font-mono text-slate-600 mt-0.5">
-                Masa Pajak: <strong>01 - 12</strong> / Tahun Pajak: <strong>${currentYear}</strong>
+                Masa Pajak: <strong>${kodeMasa}</strong> / Tahun Pajak: <strong>${currentYear}</strong>
               </div>
             </div>
             <div class="col-span-3 border-l-2 border-slate-900 pl-2 text-right">
@@ -246,7 +264,7 @@ export function renderBpa2View(): string {
                 </tr>
                 <tr>
                   <td class="py-1 px-3 text-center font-mono text-slate-500 border-r border-slate-300">6</td>
-                  <td class="py-1 px-3 text-slate-800 border-r border-slate-300">Biaya Jabatan (5% x Bruto, Maks. Rp 6.000.000 / thn)</td>
+                  <td class="py-1 px-3 text-slate-800 border-r border-slate-300">Biaya Jabatan (5% x Bruto, Maks. ${formatRupiah(maxBiayaJabatan)})</td>
                   <td class="py-1 px-3 text-right font-mono text-slate-800">${formatNumber(biayaJabatan)}</td>
                 </tr>
                 <tr>
@@ -282,17 +300,17 @@ export function renderBpa2View(): string {
                 </tr>
                 <tr class="font-bold">
                   <td class="py-1.5 px-3 text-center border-r border-slate-300">12</td>
-                  <td class="py-1.5 px-3 text-slate-900 border-r border-slate-300">PPh Pasal 21 Terutang Setahun (Pasal 17 UU HPP)</td>
+                  <td class="py-1.5 px-3 text-slate-900 border-r border-slate-300">PPh Pasal 21 Terutang ${akhir && akhir.jumlah_bulan < 12 ? `Masa ${kodeMasa}` : 'Setahun'} (Pasal 17 UU HPP)</td>
                   <td class="py-1.5 px-3 text-right font-mono text-blue-900">${formatNumber(pph21Setahun)}</td>
                 </tr>
                 <tr>
                   <td class="py-1 px-3 text-center font-mono text-slate-500 border-r border-slate-300">13</td>
-                  <td class="py-1 px-3 text-slate-800 border-r border-slate-300">PPh Pasal 21 yang Telah Dipotong Masa Sebelumnya (Jan - Nov)</td>
+                  <td class="py-1 px-3 text-slate-800 border-r border-slate-300">PPh Pasal 21 yang Telah Dipotong Masa Sebelumnya${akhir && akhir.jumlah_bulan > 1 ? ` (Masa 01 s.d. ${String(akhir.jumlah_bulan - 1).padStart(2, '0')})` : ''}</td>
                   <td class="py-1 px-3 text-right font-mono text-slate-800">${formatNumber(pph21Sebelumnya)}</td>
                 </tr>
                 <tr class="bg-emerald-50/70 font-bold border-t-2 border-slate-400">
                   <td class="py-2 px-3 text-center border-r border-slate-300 text-emerald-900">14</td>
-                  <td class="py-2 px-3 text-emerald-950 border-r border-slate-300">PPh Pasal 21 Kurang / (Lebih) Dipotong Masa Terakhir</td>
+                  <td class="py-2 px-3 text-emerald-950 border-r border-slate-300">PPh Pasal 21 Kurang / (Lebih) Dipotong Masa Terakhir (${akhir ? akhir.nama_bulan_akhir : 'Masa Terakhir'})</td>
                   <td class="py-2 px-3 text-right font-mono text-emerald-950 text-sm">${formatNumber(pph21TerutangMasaAkhir)}</td>
                 </tr>
               </tbody>

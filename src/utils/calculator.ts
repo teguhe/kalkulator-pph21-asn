@@ -20,178 +20,14 @@ import {
 } from '../types';
 
 /**
- * Calculates complete tax results for all 12 months, including monthly TER and Akhir Periode reconciliation
+ * Helper to compute split withholding breakdown for a specific list of months
  */
-export function calculatePPh21(pegawai: PegawaiData, periode: PeriodeBulan[]): RingkasanTahunan {
-  const hasilBulanan: HasilBulan[] = [];
-  let akhirPeriodeResult: HasilAkhirPeriode | undefined;
-
-  // Find the designated akhir periode month (or default to month 12 if none explicitly marked)
-  const akhirPeriodeIndex = periode.findIndex(b => b.is_akhir_periode || b.metode_perhitungan === 'AKHIR_PERIODE');
-  const targetAkhirBulanIndex = akhirPeriodeIndex !== -1 ? akhirPeriodeIndex : 11; // 0-indexed, default bulan 12 (index 11)
-
-  // Step 1: Calculate months prior to and up to Akhir Periode
-  let akumulasiPajakTerutangSebelumAkhir = 0;
-
-  for (let i = 0; i < periode.length; i++) {
-    const bulan = periode[i];
-    const kp = bulan.komponen_penghasilan;
-    
-    const k1_bruto = kp.penghasilan_1.bruto || 0;
-    const k1_pajak = kp.penghasilan_1.pajak_dipotong || 0;
-    const k2_bruto = kp.penghasilan_2.bruto || 0;
-    const k2_pajak = kp.penghasilan_2.pajak_dipotong || 0;
-    const k3_bruto = kp.penghasilan_3.bruto || 0;
-    const k3_pajak = kp.penghasilan_3.pajak_dipotong || 0;
-    const k4_bruto = kp.penghasilan_4.bruto || 0;
-    const k4_pajak = kp.penghasilan_4.pajak_dipotong || 0;
-
-    const bruto_total = k1_bruto + k2_bruto + k3_bruto + k4_bruto;
-    const pajak_sudah_dipotong = k1_pajak + k2_pajak + k3_pajak + k4_pajak;
-
-    const isAkhir = i === targetAkhirBulanIndex;
-
-    if (!isAkhir && i < targetAkhirBulanIndex) {
-      // TER Bulanan
-      const ter_rate = getTERRate(pegawai.kategori_ter, bruto_total);
-      const pph21_terutang = Math.floor(bruto_total * (ter_rate / 100));
-      const selisih = pph21_terutang - pajak_sudah_dipotong;
-
-      akumulasiPajakTerutangSebelumAkhir += pph21_terutang;
-
-      hasilBulanan.push({
-        bulan: bulan.bulan,
-        nama_bulan: bulan.nama_bulan,
-        metode_perhitungan: 'TER_BULANAN',
-        is_akhir_periode: false,
-        bruto_total,
-        pajak_sudah_dipotong,
-        ter_rate,
-        pph21_terutang,
-        selisih,
-        komponen: {
-          k1_bruto, k1_pajak,
-          k2_bruto, k2_pajak,
-          k3_bruto, k3_pajak,
-          k4_bruto, k4_pajak
-        }
-      });
-    } else if (isAkhir) {
-      // Akhir Periode calculation (Akumulatif s.d. bulan ini)
-      const monthsUpToHere = periode.slice(0, i + 1);
-      const jumlah_bulan = monthsUpToHere.length;
-
-      let total_bruto_akumulasi = 0;
-      let total_gaji_akumulasi = 0;
-      let total_pajak_sudah_dipotong_tahunan = 0;
-
-      for (const m of monthsUpToHere) {
-        const mkp = m.komponen_penghasilan;
-        const mb = (mkp.penghasilan_1.bruto || 0) + (mkp.penghasilan_2.bruto || 0) + (mkp.penghasilan_3.bruto || 0) + (mkp.penghasilan_4.bruto || 0);
-        const mp = (mkp.penghasilan_1.pajak_dipotong || 0) + (mkp.penghasilan_2.pajak_dipotong || 0) + (mkp.penghasilan_3.pajak_dipotong || 0) + (mkp.penghasilan_4.pajak_dipotong || 0);
-        
-        total_bruto_akumulasi += mb;
-        total_gaji_akumulasi += (mkp.penghasilan_1.bruto || 0);
-        total_pajak_sudah_dipotong_tahunan += mp;
-      }
-
-      // Biaya Jabatan: 5% dari Bruto, maksimal 500rb/bulan (maks 6jt/thn)
-      const max_biaya_jabatan = Math.min(jumlah_bulan * BIAYA_JABATAN_CONFIG.MAX_BULANAN, BIAYA_JABATAN_CONFIG.MAX_TAHUNAN);
-      const biaya_jabatan = Math.min(Math.floor(total_bruto_akumulasi * BIAYA_JABATAN_CONFIG.RATE), max_biaya_jabatan);
-
-      // Iuran Pensiun: % dari Gaji Pokok & Tunjangan Melekat
-      const persenPensiun = typeof pegawai.persen_iuran_pensiun === 'number' ? pegawai.persen_iuran_pensiun : 4.75;
-      const iuran_pensiun = Math.floor(total_gaji_akumulasi * (persenPensiun / 100));
-
-      const total_pengurang = biaya_jabatan + iuran_pensiun;
-      const penghasilan_neto = Math.max(0, total_bruto_akumulasi - total_pengurang);
-
-      // PTKP
-      const ptkpConfig = PTKP_MAP[pegawai.status_ptkp] || PTKP_MAP['TK/0'];
-      const ptkp = ptkpConfig.nilaiTahunan;
-
-      // PKP (dibulatkan ribuan ke bawah)
-      const pkp_raw = penghasilan_neto - ptkp;
-      const pkp = pkp_raw > 0 ? Math.floor(pkp_raw / 1000) * 1000 : 0;
-
-      // Hitung PPh 21 Pasal 17 & Lapisan Breakdown
-      const { totalTax: pph21_pasal17_setahun, layers } = calculatePasal17Detailed(pkp);
-
-      // PPh 21 Terutang di Bulan Akhir Periode = PPh 21 Setahun - Pajak yang terutang pada bulan-bulan sebelumnya
-      const pph21_terutang_bulan_terakhir = Math.max(0, pph21_pasal17_setahun - akumulasiPajakTerutangSebelumAkhir);
-      const selisih_bulan_ini = pph21_terutang_bulan_terakhir - pajak_sudah_dipotong;
-      const selisih_tahunan = pph21_pasal17_setahun - total_pajak_sudah_dipotong_tahunan;
-
-      akhirPeriodeResult = {
-        bulan_akhir: bulan.bulan,
-        nama_bulan_akhir: bulan.nama_bulan,
-        jumlah_bulan,
-        total_bruto_akumulasi,
-        total_gaji_akumulasi,
-        biaya_jabatan,
-        max_biaya_jabatan,
-        iuran_pensiun,
-        total_pengurang,
-        penghasilan_neto,
-        ptkp,
-        status_ptkp: pegawai.status_ptkp,
-        pkp,
-        pph21_pasal17_setahun,
-        pajak_terutang_sebelumnya: akumulasiPajakTerutangSebelumAkhir,
-        pph21_terutang_bulan_terakhir,
-        total_pajak_sudah_dipotong_tahunan,
-        selisih_tahunan,
-        lapisan_breakdown: layers
-      };
-
-      hasilBulanan.push({
-        bulan: bulan.bulan,
-        nama_bulan: bulan.nama_bulan,
-        metode_perhitungan: 'AKHIR_PERIODE',
-        is_akhir_periode: true,
-        bruto_total,
-        pajak_sudah_dipotong,
-        pph21_terutang: pph21_terutang_bulan_terakhir,
-        selisih: selisih_bulan_ini,
-        komponen: {
-          k1_bruto, k1_pajak,
-          k2_bruto, k2_pajak,
-          k3_bruto, k3_pajak,
-          k4_bruto, k4_pajak
-        }
-      });
-    } else {
-      // Months after designated akhir periode (if any)
-      const ter_rate = getTERRate(pegawai.kategori_ter, bruto_total);
-      const pph21_terutang = Math.floor(bruto_total * (ter_rate / 100));
-      const selisih = pph21_terutang - pajak_sudah_dipotong;
-
-      hasilBulanan.push({
-        bulan: bulan.bulan,
-        nama_bulan: bulan.nama_bulan,
-        metode_perhitungan: 'TER_BULANAN',
-        is_akhir_periode: false,
-        bruto_total,
-        pajak_sudah_dipotong,
-        ter_rate,
-        pph21_terutang,
-        selisih,
-        komponen: {
-          k1_bruto, k1_pajak,
-          k2_bruto, k2_pajak,
-          k3_bruto, k3_pajak,
-          k4_bruto, k4_pajak
-        }
-      });
-    }
-  }
-
-  // Rekapitulasi Bendahara Pemotong (Split Withholding Summary)
+export function calculateSplitWithholdingForMonths(months: PeriodeBulan[], pegawai: PegawaiData): RekapitulasiBendahara[] {
   const rekapMap = new Map<string, RekapitulasiBendahara>();
   let grandTotalBruto = 0;
   let grandTotalPajakDipotong = 0;
 
-  for (const b of periode) {
+  for (const b of months) {
     const kp = b.komponen_penghasilan;
     const items: { comp: any; name: string }[] = [
       { comp: kp.penghasilan_1, name: kp.penghasilan_1.label || 'Gaji Plus Tunjangan Melekat' },
@@ -209,7 +45,7 @@ export function calculatePPh21(pegawai: PegawaiData, periode: PeriodeBulan[]): R
 
         const isUtama = npwp === pegawai.instansi.npwp_instansi_utama;
         const namaKet = isUtama
-          ? `${pegawai.instansi.nama_instansi} (Bendahara Utama)`
+          ? `${pegawai.instansi.nama_instansi || 'Instansi Utama'} (Bendahara Utama)`
           : `Bendahara Pemotong Lainnya (${npwp})`;
 
         if (!rekapMap.has(npwp)) {
@@ -236,21 +72,206 @@ export function calculatePPh21(pegawai: PegawaiData, periode: PeriodeBulan[]): R
     }
   }
 
-  const rekapBendahara: RekapitulasiBendahara[] = Array.from(rekapMap.values()).map(r => ({
+  return Array.from(rekapMap.values()).map(r => ({
     ...r,
     persentase_bruto: grandTotalBruto > 0 ? (r.total_bruto / grandTotalBruto) * 100 : 0
   }));
+}
+
+/**
+ * Calculates complete tax results for all 12 months, supporting MULTIPLE Akhir Periode
+ * (e.g. Month 4 April as intermediate ending period AND Month 12 December as annual ending period)
+ */
+export function calculatePPh21(pegawai: PegawaiData, periode: PeriodeBulan[]): RingkasanTahunan {
+  const hasilBulanan: HasilBulan[] = [];
+  const daftarAkhirPeriode: HasilAkhirPeriode[] = [];
+
+  // Check if any month is flagged as akhir periode; if none, default month 12 (index 11)
+  const hasAnyAkhir = periode.some(b => b.is_akhir_periode || b.metode_perhitungan === 'AKHIR_PERIODE');
+
+  // Track cumulative tax owed from month 1 onwards across all months
+  let akumulasiPajakTerutang = 0;
+
+  for (let i = 0; i < periode.length; i++) {
+    const bulan = periode[i];
+    const kp = bulan.komponen_penghasilan;
+    
+    const k1_bruto = kp.penghasilan_1.bruto || 0;
+    const k1_pajak = kp.penghasilan_1.pajak_dipotong || 0;
+    const k2_bruto = kp.penghasilan_2.bruto || 0;
+    const k2_pajak = kp.penghasilan_2.pajak_dipotong || 0;
+    const k3_bruto = kp.penghasilan_3.bruto || 0;
+    const k3_pajak = kp.penghasilan_3.pajak_dipotong || 0;
+    const k4_bruto = kp.penghasilan_4.bruto || 0;
+    const k4_pajak = kp.penghasilan_4.pajak_dipotong || 0;
+
+    const bruto_total = k1_bruto + k2_bruto + k3_bruto + k4_bruto;
+    const pajak_sudah_dipotong = k1_pajak + k2_pajak + k3_pajak + k4_pajak;
+
+    // A month is an Akhir Periode if explicitly marked OR if no month was marked and this is December
+    const isAkhir = Boolean(
+      bulan.is_akhir_periode || 
+      bulan.metode_perhitungan === 'AKHIR_PERIODE' || 
+      (!hasAnyAkhir && i === 11)
+    );
+
+    if (!isAkhir) {
+      // TER Bulanan
+      const ter_rate = getTERRate(pegawai.kategori_ter, bruto_total);
+      const pph21_terutang = Math.floor(bruto_total * (ter_rate / 100));
+      const selisih = pph21_terutang - pajak_sudah_dipotong;
+
+      akumulasiPajakTerutang += pph21_terutang;
+
+      hasilBulanan.push({
+        bulan: bulan.bulan,
+        nama_bulan: bulan.nama_bulan,
+        metode_perhitungan: 'TER_BULANAN',
+        is_akhir_periode: false,
+        bruto_total,
+        pajak_sudah_dipotong,
+        ter_rate,
+        pph21_terutang,
+        selisih,
+        komponen: {
+          k1_bruto, k1_pajak,
+          k2_bruto, k2_pajak,
+          k3_bruto, k3_pajak,
+          k4_bruto, k4_pajak
+        }
+      });
+    } else {
+      // AKHIR PERIODE (Pasal 17 Tahunan / Rekonsiliasi Kumulatif)
+      // Cumulative months from month 1 through current month i+1
+      const monthsUpToHere = periode.slice(0, i + 1);
+      const jumlah_bulan = monthsUpToHere.length;
+      const kode_masa = `01 - ${String(bulan.bulan).padStart(2, '0')}`;
+
+      let total_bruto_akumulasi = 0;
+      let total_gaji_akumulasi = 0;
+      let total_tpp_akumulasi = 0;
+      let total_honor1_akumulasi = 0;
+      let total_honor2_akumulasi = 0;
+      let total_pajak_sudah_dipotong_tahunan = 0;
+
+      for (const m of monthsUpToHere) {
+        const mkp = m.komponen_penghasilan;
+        const g = mkp.penghasilan_1.bruto || 0;
+        const t = mkp.penghasilan_2.bruto || 0;
+        const h1 = mkp.penghasilan_3.bruto || 0;
+        const h2 = mkp.penghasilan_4.bruto || 0;
+        const mp = (mkp.penghasilan_1.pajak_dipotong || 0) + (mkp.penghasilan_2.pajak_dipotong || 0) + (mkp.penghasilan_3.pajak_dipotong || 0) + (mkp.penghasilan_4.pajak_dipotong || 0);
+
+        total_bruto_akumulasi += (g + t + h1 + h2);
+        total_gaji_akumulasi += g;
+        total_tpp_akumulasi += t;
+        total_honor1_akumulasi += h1;
+        total_honor2_akumulasi += h2;
+        total_pajak_sudah_dipotong_tahunan += mp;
+      }
+
+      // Biaya Jabatan: 5% dari Bruto, maksimal 500rb/bulan x jumlah_bulan (maks 6jt/thn)
+      const max_biaya_jabatan = Math.min(jumlah_bulan * BIAYA_JABATAN_CONFIG.MAX_BULANAN, BIAYA_JABATAN_CONFIG.MAX_TAHUNAN);
+      const biaya_jabatan = Math.min(Math.floor(total_bruto_akumulasi * BIAYA_JABATAN_CONFIG.RATE), max_biaya_jabatan);
+
+      // Iuran Pensiun: % dari Gaji Pokok & Tunjangan Melekat
+      const persenPensiun = typeof pegawai.persen_iuran_pensiun === 'number' ? pegawai.persen_iuran_pensiun : 4.75;
+      const iuran_pensiun = Math.floor(total_gaji_akumulasi * (persenPensiun / 100));
+
+      const total_pengurang = biaya_jabatan + iuran_pensiun;
+      const penghasilan_neto = Math.max(0, total_bruto_akumulasi - total_pengurang);
+
+      // PTKP Tahunan
+      const ptkpConfig = PTKP_MAP[pegawai.status_ptkp] || PTKP_MAP['TK/0'];
+      const ptkp = ptkpConfig.nilaiTahunan;
+
+      // PKP (dibulatkan ribuan ke bawah)
+      const pkp_raw = penghasilan_neto - ptkp;
+      const pkp = pkp_raw > 0 ? Math.floor(pkp_raw / 1000) * 1000 : 0;
+
+      // Hitung PPh 21 Pasal 17 & Lapisan Breakdown
+      const { totalTax: pph21_pasal17_setahun, layers } = calculatePasal17Detailed(pkp);
+
+      // PPh 21 Terutang di Bulan Akhir Periode ini:
+      // = PPh 21 Pasal 17 Kumulatif s.d. bulan ini - Pajak yang telah terutang pada bulan-bulan sebelumnya
+      const pajak_terutang_sebelumnya = akumulasiPajakTerutang;
+      const pph21_terutang_bulan_terakhir = pph21_pasal17_setahun - pajak_terutang_sebelumnya;
+      const selisih_bulan_ini = pph21_terutang_bulan_terakhir - pajak_sudah_dipotong;
+      const selisih_tahunan = pph21_pasal17_setahun - total_pajak_sudah_dipotong_tahunan;
+
+      // Update akumulasi pajak terutang for subsequent months
+      akumulasiPajakTerutang += pph21_terutang_bulan_terakhir;
+
+      // Split withholding khusus periode 1 s.d. bulan ini
+      const rekapPeriode = calculateSplitWithholdingForMonths(monthsUpToHere, pegawai);
+
+      const akhirObj: HasilAkhirPeriode = {
+        bulan_mulai: 1,
+        bulan_akhir: bulan.bulan,
+        nama_bulan_mulai: 'Januari',
+        nama_bulan_akhir: bulan.nama_bulan,
+        kode_masa,
+        jumlah_bulan,
+        total_bruto_akumulasi,
+        total_gaji_akumulasi,
+        total_tpp_akumulasi,
+        total_honor1_akumulasi,
+        total_honor2_akumulasi,
+        biaya_jabatan,
+        max_biaya_jabatan,
+        iuran_pensiun,
+        total_pengurang,
+        penghasilan_neto,
+        ptkp,
+        status_ptkp: pegawai.status_ptkp,
+        pkp,
+        pph21_pasal17_setahun,
+        pajak_terutang_sebelumnya,
+        pph21_terutang_bulan_terakhir,
+        total_pajak_sudah_dipotong_tahunan,
+        selisih_tahunan,
+        lapisan_breakdown: layers,
+        rekap_bendahara_periode: rekapPeriode
+      };
+
+      daftarAkhirPeriode.push(akhirObj);
+
+      hasilBulanan.push({
+        bulan: bulan.bulan,
+        nama_bulan: bulan.nama_bulan,
+        metode_perhitungan: 'AKHIR_PERIODE',
+        is_akhir_periode: true,
+        bruto_total,
+        pajak_sudah_dipotong,
+        pph21_terutang: pph21_terutang_bulan_terakhir,
+        selisih: selisih_bulan_ini,
+        komponen: {
+          k1_bruto, k1_pajak,
+          k2_bruto, k2_pajak,
+          k3_bruto, k3_pajak,
+          k4_bruto, k4_pajak
+        }
+      });
+    }
+  }
+
+  // Rekapitulasi Bendahara Pemotong (Full Year Split Withholding)
+  const rekapBendahara = calculateSplitWithholdingForMonths(periode, pegawai);
 
   const total_bruto_setahun = hasilBulanan.reduce((acc, h) => acc + h.bruto_total, 0);
   const total_pajak_dipotong_setahun = hasilBulanan.reduce((acc, h) => acc + h.pajak_sudah_dipotong, 0);
-  const total_pph21_terutang_setahun = akhirPeriodeResult 
-    ? akhirPeriodeResult.pph21_pasal17_setahun 
-    : hasilBulanan.reduce((acc, h) => acc + h.pph21_terutang, 0);
+  const total_pph21_terutang_setahun = hasilBulanan.reduce((acc, h) => acc + h.pph21_terutang, 0);
   const total_selisih_setahun = total_pph21_terutang_setahun - total_pajak_dipotong_setahun;
+
+  // The primary / latest akhir periode
+  const primaryAkhirPeriode = daftarAkhirPeriode.length > 0 
+    ? daftarAkhirPeriode[daftarAkhirPeriode.length - 1] 
+    : undefined;
 
   return {
     hasil_bulanan: hasilBulanan,
-    akhir_periode: akhirPeriodeResult,
+    daftar_akhir_periode: daftarAkhirPeriode,
+    akhir_periode: primaryAkhirPeriode,
     total_bruto_setahun,
     total_pajak_dipotong_setahun,
     total_pph21_terutang_setahun,

@@ -429,9 +429,25 @@ function attachHasilListeners(): void {
   btnGotoBpa2?.addEventListener('click', () => {
     appState.setActiveTab('bpa2');
   });
+
+  // Period Switcher Tab Buttons
+  document.querySelectorAll('.btn-rekonsiliasi-period').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const month = parseInt((e.currentTarget as HTMLElement).dataset.month || '0', 10);
+      if (month > 0) {
+        appState.setSelectedHasilRekonsiliasiMonth(month);
+      }
+    });
+  });
 }
 
 function attachBpa2Listeners(): void {
+  const selectPeriod = document.getElementById('select-bpa2-period') as HTMLSelectElement;
+  selectPeriod?.addEventListener('change', (e) => {
+    const val = parseInt((e.target as HTMLSelectElement).value, 10);
+    appState.setSelectedBpa2PeriodMonth(val);
+  });
+
   const selectNPWP = document.getElementById('select-bpa2-npwp') as HTMLSelectElement;
   selectNPWP?.addEventListener('change', (e) => {
     const val = (e.target as HTMLSelectElement).value;
@@ -466,8 +482,10 @@ function attachBpa2Listeners(): void {
   btnDownloadHtml?.addEventListener('click', () => {
     const container = document.getElementById('bpa2-print-container');
     if (!container) return;
+    const ap = appState.getActiveBpa2Result();
+    const masaSuffix = ap ? `_Masa_${ap.kode_masa.replace(/\s+/g, '')}` : '';
     const safeName = (appState.dataset.pegawai.nama || 'ASN').replace(/[^a-zA-Z0-9_-]/g, '_');
-    const title = `Formulir_1721_BPA2_${safeName}`;
+    const title = `Formulir_1721_BPA2_${safeName}${masaSuffix}`;
     const htmlContent = `<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -493,7 +511,7 @@ function attachBpa2Listeners(): void {
     a.download = `${title}.html`;
     a.click();
     URL.revokeObjectURL(url);
-    appState.showToast('success', 'File Diunduh', `Formulir BPA2 mandiri telah diunduh sebagai ${a.download}.`);
+    appState.showToast('success', 'File Diunduh', `Formulir BPA2 mandiri (${ap ? ap.kode_masa : ''}) telah diunduh sebagai ${a.download}.`);
   });
 }
 
