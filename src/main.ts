@@ -4,7 +4,8 @@ import { authService } from './services/authService';
 import { quotaService } from './services/quotaService';
 import { logService } from './services/logService';
 import { validatePPh21Dataset } from './utils/validator';
-import { parseFormattedNumber, formatNumber } from './utils/formatters';
+import { parseFormattedNumber, formatNumber, formatRupiah } from './utils/formatters';
+import { PTKP_MAP } from '../taxConstants';
 
 import { renderHeader } from './components/Header';
 import { renderNavigation } from './components/Navigation';
@@ -70,6 +71,69 @@ function renderApp(): void {
   `;
 
   attachEventListeners();
+}
+
+function updateToastContainerUI(): void {
+  const container = document.getElementById('toast-container');
+  if (container) {
+    container.outerHTML = renderToastContainer();
+    // Attach dismiss handlers
+    document.querySelectorAll('.btn-dismiss-toast').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.toastId;
+        if (id) appState.removeToast(id);
+      });
+    });
+  }
+}
+
+function updateMonthSummaryCards(monthNum: number): void {
+  const mCalc = appState.calculation.hasil_bulanan[monthNum - 1];
+  if (!mCalc) return;
+
+  const currentMonthData = appState.dataset.periode_bulanan[monthNum - 1];
+  const isAkhir = currentMonthData.is_akhir_periode || currentMonthData.metode_perhitungan === 'AKHIR_PERIODE';
+
+  // 1. Total Bruto
+  const elBruto = document.getElementById('summary-month-bruto');
+  if (elBruto) elBruto.textContent = formatRupiah(mCalc.bruto_total);
+
+  // 2. Rate / Method
+  const elRate = document.getElementById('summary-month-rate');
+  if (elRate) {
+    elRate.textContent = isAkhir 
+      ? 'Pasal 17 Tahunan' 
+      : `${mCalc.ter_rate ?? 0}% (Kategori ${appState.dataset.pegawai.kategori_ter})`;
+  }
+
+  // 3. PPh Terutang & Dipotong
+  const elPph = document.getElementById('summary-month-pph');
+  if (elPph) elPph.textContent = formatRupiah(mCalc.pph21_terutang);
+
+  const elDipotong = document.getElementById('summary-month-dipotong');
+  if (elDipotong) elDipotong.textContent = `Sudah dipotong: ${formatRupiah(mCalc.pajak_sudah_dipotong)}`;
+
+  // 4. Selisih
+  const elSelisih = document.getElementById('summary-month-selisih');
+  const elSelisihStatus = document.getElementById('summary-month-selisih-status');
+  if (elSelisih) {
+    elSelisih.textContent = mCalc.selisih > 0 ? `+${formatRupiah(mCalc.selisih)}` : formatRupiah(mCalc.selisih);
+    elSelisih.className = `text-base sm:text-lg font-bold ${
+      mCalc.selisih > 0 ? 'text-rose-600' : mCalc.selisih < 0 ? 'text-amber-600' : 'text-emerald-600'
+    }`;
+  }
+  if (elSelisihStatus) {
+    elSelisihStatus.textContent = mCalc.selisih > 0 ? 'Kurang Bayar / Potong' : mCalc.selisih < 0 ? 'Lebih Bayar / Potong' : 'Sesuai (Nihil)';
+    elSelisihStatus.className = `text-[11px] font-semibold mt-0.5 ${
+      mCalc.selisih > 0 ? 'text-rose-500' : mCalc.selisih < 0 ? 'text-amber-500' : 'text-emerald-500'
+    }`;
+  }
+
+  // 5. Update chip in 12-month strip
+  const elChip = document.querySelector(`[data-month-chip="${monthNum}"]`);
+  if (elChip) {
+    elChip.textContent = mCalc.bruto_total > 0 ? formatNumber(mCalc.bruto_total / 1000000) + 'jt' : '-';
+  }
 }
 
 function attachEventListeners(): void {
@@ -202,14 +266,15 @@ function attachEventListeners(): void {
 }
 
 function attachPegawaiListeners(): void {
+  // Bind text inputs with shouldNotify = false to prevent DOM destruction on keystroke!
   const bindText = (id: string, field: any, isInstansi: boolean = false) => {
     const el = document.getElementById(id) as HTMLInputElement;
     el?.addEventListener('input', (e) => {
       const val = (e.target as HTMLInputElement).value;
       if (isInstansi) {
-        appState.updateInstansi(field, val);
+        appState.updateInstansi(field, val, false);
       } else {
-        appState.updatePegawai(field, val);
+        appState.updatePegawai(field, val, false);
       }
     });
   };
@@ -221,24 +286,44 @@ function attachPegawaiListeners(): void {
   bindText('pegawai-pangkat', 'pangkat_golongan');
   bindText('pegawai-jabatan', 'jabatan');
 
+  // PTKP select dropdown
   const ptkpSelect = document.getElementById('pegawai-ptkp') as HTMLSelectElement;
   ptkpSelect?.addEventListener('change', (e) => {
     const val = (e.target as HTMLSelectElement).value;
-    appState.updatePegawai('status_ptkp', val);
+    appState.updatePegawai('status_ptkp', val, false);
+
+    // Update TER select and info banner directly in the DOM without re-rendering!
+    const terSelect = document.getElementById('pegawai-kategori-ter') as HTMLSelectElement;
+    if (terSelect) {
+      terSelect.value = appState.dataset.pegawai.kategori_ter;
+    }
+    const infoBanner = document.getElementById('ptkp-info-banner');
+    if (infoBanner) {
+      const ptkpConf = PTKP_MAP[val as keyof typeof PTKP_MAP] || PTKP_MAP['TK/0'];
+      infoBanner.innerHTML = `<strong>Nilai PTKP Tahunan:</strong> ${formatRupiah(ptkpConf.nilaiTahunan)} (${ptkpConf.deskripsi}). Kategori TER bulanan aktif: <strong>Kategori ${appState.dataset.pegawai.kategori_ter}</strong>.`;
+    }
   });
 
+  // TER category override
   const terSelect = document.getElementById('pegawai-kategori-ter') as HTMLSelectElement;
   terSelect?.addEventListener('change', (e) => {
     const val = (e.target as HTMLSelectElement).value;
-    appState.updatePegawai('kategori_ter', val);
+    appState.updatePegawai('kategori_ter', val, false);
+    const infoBanner = document.getElementById('ptkp-info-banner');
+    if (infoBanner) {
+      const ptkpConf = PTKP_MAP[appState.dataset.pegawai.status_ptkp] || PTKP_MAP['TK/0'];
+      infoBanner.innerHTML = `<strong>Nilai PTKP Tahunan:</strong> ${formatRupiah(ptkpConf.nilaiTahunan)} (${ptkpConf.deskripsi}). Kategori TER bulanan aktif: <strong>Kategori ${val}</strong>.`;
+    }
   });
 
+  // Iuran Pensiun %
   const iuranInput = document.getElementById('pegawai-iuran-pensiun') as HTMLInputElement;
   iuranInput?.addEventListener('input', (e) => {
     const val = parseFloat((e.target as HTMLInputElement).value) || 0;
-    appState.updatePegawai('persen_iuran_pensiun', val);
+    appState.updatePegawai('persen_iuran_pensiun', val, false);
   });
 
+  // Instansi fields
   bindText('instansi-nama', 'nama_instansi', true);
   bindText('instansi-npwp', 'npwp_instansi_utama', true);
   bindText('instansi-bendahara-nama', 'nama_bendahara_utama', true);
@@ -269,23 +354,25 @@ function attachInputListeners(): void {
   const toggleAkhir = document.getElementById('toggle-akhir-periode') as HTMLInputElement;
   toggleAkhir?.addEventListener('change', (e) => {
     const isChecked = (e.target as HTMLInputElement).checked;
-    appState.updateBulanMetode(appState.activeMonth, isChecked);
+    appState.updateBulanMetode(appState.activeMonth, isChecked, true);
   });
 
-  // Component Currency Inputs
+  // Component Currency Inputs (smooth typing with live summary update without re-rendering form inputs)
   document.querySelectorAll('.comp-input').forEach(input => {
     input.addEventListener('input', (e) => {
       const el = e.target as HTMLInputElement;
       const comp = el.dataset.comp as any;
       const field = el.dataset.field as any;
       const parsed = parseFormattedNumber(el.value);
-      appState.updateKomponen(appState.activeMonth, comp, field, parsed);
+      appState.updateKomponen(appState.activeMonth, comp, field, parsed, false);
+      updateMonthSummaryCards(appState.activeMonth);
     });
 
     input.addEventListener('blur', (e) => {
       const el = e.target as HTMLInputElement;
       const parsed = parseFormattedNumber(el.value);
       el.value = formatNumber(parsed);
+      updateMonthSummaryCards(appState.activeMonth);
     });
   });
 
@@ -295,7 +382,7 @@ function attachInputListeners(): void {
       const el = e.target as HTMLInputElement;
       const comp = el.dataset.comp as any;
       const field = el.dataset.field as any;
-      appState.updateKomponen(appState.activeMonth, comp, field, el.value);
+      appState.updateKomponen(appState.activeMonth, comp, field, el.value, false);
     });
   });
 
@@ -304,7 +391,7 @@ function attachInputListeners(): void {
     input.addEventListener('input', (e) => {
       const el = e.target as HTMLInputElement;
       const comp = el.dataset.comp as any;
-      appState.updateKomponen(appState.activeMonth, comp, 'label', el.value);
+      appState.updateKomponen(appState.activeMonth, comp, 'label', el.value, false);
     });
   });
 
@@ -571,9 +658,14 @@ function showValidationErrorModal(errors: string[]): void {
   }
 }
 
-// Subscribe to state updates
+// Subscribe to state updates for view-changing actions
 appState.subscribe(() => {
   renderApp();
+});
+
+// Subscribe to toast updates independently so main form DOM is never rebuilt when a toast appears!
+appState.subscribeToast(() => {
+  updateToastContainerUI();
 });
 
 // Initial mount

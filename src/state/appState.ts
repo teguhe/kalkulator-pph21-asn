@@ -28,6 +28,7 @@ class AppState {
   public selectedBpa2NPWP: string = 'ALL'; // 'ALL' or specific NPWP
 
   private listeners: (() => void)[] = [];
+  private toastListeners: (() => void)[] = [];
 
   constructor() {
     this.dataset = this.loadInitialDataset();
@@ -52,7 +53,6 @@ class AppState {
     } catch {
       // Fallback
     }
-    // PRD 3.5: "Aplikasi dimulai dengan data kosong, dilengkapi tombol Load Template Dummy ASN/PNS untuk sampel perhitungan."
     return createEmptyDataset();
   }
 
@@ -71,9 +71,20 @@ class AppState {
     };
   }
 
+  public subscribeToast(listener: () => void): () => void {
+    this.toastListeners.push(listener);
+    return () => {
+      this.toastListeners = this.toastListeners.filter(l => l !== listener);
+    };
+  }
+
   public notify(): void {
     this.quotaState = quotaService.getQuotaState();
     this.listeners.forEach(cb => cb());
+  }
+
+  public notifyToast(): void {
+    this.toastListeners.forEach(cb => cb());
   }
 
   public setActiveTab(tab: TabType): void {
@@ -97,21 +108,21 @@ class AppState {
     const id = 'toast_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5);
     const toast: ToastMessage = { id, type, title, message };
     this.toasts.push(toast);
-    this.notify();
+    this.notifyToast();
 
     setTimeout(() => {
       this.toasts = this.toasts.filter(t => t.id !== id);
-      this.notify();
+      this.notifyToast();
     }, 4500);
   }
 
   public removeToast(id: string): void {
     this.toasts = this.toasts.filter(t => t.id !== id);
-    this.notify();
+    this.notifyToast();
   }
 
   // Pegawai updates
-  public updatePegawai(field: keyof PPh21Dataset['pegawai'], value: any): void {
+  public updatePegawai(field: keyof PPh21Dataset['pegawai'], value: any, shouldNotify: boolean = false): void {
     (this.dataset.pegawai as any)[field] = value;
 
     // Automatic TER Category synchronization when PTKP changes
@@ -124,14 +135,18 @@ class AppState {
 
     this.recalculateTax(false);
     this.saveDatasetToStorage();
-    this.notify();
+    if (shouldNotify) {
+      this.notify();
+    }
   }
 
-  public updateInstansi(field: keyof PPh21Dataset['pegawai']['instansi'], value: string): void {
+  public updateInstansi(field: keyof PPh21Dataset['pegawai']['instansi'], value: string, shouldNotify: boolean = false): void {
     this.dataset.pegawai.instansi[field] = value;
     this.recalculateTax(false);
     this.saveDatasetToStorage();
-    this.notify();
+    if (shouldNotify) {
+      this.notify();
+    }
   }
 
   public syncMainNPWPToAllComponents(): void {
@@ -157,14 +172,16 @@ class AppState {
   }
 
   // Monthly updates
-  public updateBulanMetode(bulanNum: number, isAkhir: boolean): void {
+  public updateBulanMetode(bulanNum: number, isAkhir: boolean, shouldNotify: boolean = true): void {
     const bulanIndex = bulanNum - 1;
     if (this.dataset.periode_bulanan[bulanIndex]) {
       this.dataset.periode_bulanan[bulanIndex].is_akhir_periode = isAkhir;
       this.dataset.periode_bulanan[bulanIndex].metode_perhitungan = isAkhir ? 'AKHIR_PERIODE' : 'TER_BULANAN';
       this.recalculateTax(false);
       this.saveDatasetToStorage();
-      this.notify();
+      if (shouldNotify) {
+        this.notify();
+      }
     }
   }
 
@@ -172,7 +189,8 @@ class AppState {
     bulanNum: number,
     compKey: 'penghasilan_1' | 'penghasilan_2' | 'penghasilan_3' | 'penghasilan_4',
     field: 'bruto' | 'pajak_dipotong' | 'npwp_bendahara' | 'label',
-    value: any
+    value: any,
+    shouldNotify: boolean = false
   ): void {
     const bulanIndex = bulanNum - 1;
     const b = this.dataset.periode_bulanan[bulanIndex];
@@ -180,7 +198,9 @@ class AppState {
       (b.komponen_penghasilan[compKey] as any)[field] = value;
       this.recalculateTax(false);
       this.saveDatasetToStorage();
-      this.notify();
+      if (shouldNotify) {
+        this.notify();
+      }
     }
   }
 
@@ -191,7 +211,6 @@ class AppState {
 
     for (let i = sourceIndex + 1; i < 12; i++) {
       const target = this.dataset.periode_bulanan[i];
-      // Keep target's akhir periode status intact
       target.komponen_penghasilan.penghasilan_1 = JSON.parse(JSON.stringify(source.komponen_penghasilan.penghasilan_1));
       target.komponen_penghasilan.penghasilan_2 = JSON.parse(JSON.stringify(source.komponen_penghasilan.penghasilan_2));
       target.komponen_penghasilan.penghasilan_3 = JSON.parse(JSON.stringify(source.komponen_penghasilan.penghasilan_3));

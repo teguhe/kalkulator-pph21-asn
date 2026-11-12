@@ -32,7 +32,7 @@ export function renderInputPenghasilanView(): string {
       <button data-month="${m.bulan}" class="month-tab-btn ${baseClass}">
         ${akhirBadge}
         <span class="text-[10px] uppercase font-bold tracking-wider">${shortName}</span>
-        <span class="text-[11px] font-mono mt-0.5">${hasData ? formatNumber(mCalc.bruto_total / 1000000) + 'jt' : '-'}</span>
+        <span data-month-chip="${m.bulan}" class="text-[11px] font-mono mt-0.5">${hasData ? formatNumber(mCalc.bruto_total / 1000000) + 'jt' : '-'}</span>
       </button>
     `;
   }).join('');
@@ -85,13 +85,13 @@ export function renderInputPenghasilanView(): string {
           <div class="flex items-center gap-3 bg-slate-800/90 border border-slate-700 p-2.5 rounded-xl shrink-0">
             <div class="text-right">
               <div class="text-xs font-semibold text-slate-200">Metode Perhitungan:</div>
-              <div class="text-[11px] text-emerald-400 font-mono">${isAkhir ? 'AKHIR PERIODE (Pasal 17)' : `TER KATEGORI ${dataset.pegawai.kategori_ter}`}</div>
+              <div id="header-method-indicator" class="text-[11px] text-emerald-400 font-mono">${isAkhir ? 'AKHIR PERIODE (Pasal 17)' : `TER KATEGORI ${dataset.pegawai.kategori_ter}`}</div>
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" id="toggle-akhir-periode" class="sr-only peer" ${isAkhir ? 'checked' : ''}>
               <div class="w-11 h-6 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
             </label>
-            <span class="text-xs font-bold ${isAkhir ? 'text-amber-400' : 'text-slate-400'}">
+            <span id="header-method-text" class="text-xs font-bold ${isAkhir ? 'text-amber-400' : 'text-slate-400'}">
               ${isAkhir ? 'Akhir Periode' : 'TER Bulanan'}
             </span>
           </div>
@@ -101,32 +101,32 @@ export function renderInputPenghasilanView(): string {
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 p-5 bg-slate-50 border-b border-slate-200">
           <div class="bg-white p-3.5 rounded-xl border border-slate-200">
             <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Total Bruto Bulan Ini</div>
-            <div class="text-base sm:text-lg font-bold text-slate-900">${formatRupiah(brutoTotal)}</div>
+            <div id="summary-month-bruto" class="text-base sm:text-lg font-bold text-slate-900">${formatRupiah(brutoTotal)}</div>
             <div class="text-[11px] text-slate-500 mt-0.5">Gabungan 4 komponen</div>
           </div>
 
           <div class="bg-white p-3.5 rounded-xl border border-slate-200">
-            <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+            <div id="summary-month-rate-label" class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
               ${isAkhir ? 'Metode Pajak' : 'Tarif TER Bulan Ini'}
             </div>
-            <div class="text-base sm:text-lg font-bold text-emerald-700">
+            <div id="summary-month-rate" class="text-base sm:text-lg font-bold text-emerald-700">
               ${isAkhir ? 'Pasal 17 Tahunan' : `${monthCalc?.ter_rate ?? 0}% (Kategori ${dataset.pegawai.kategori_ter})`}
             </div>
-            <div class="text-[11px] text-slate-500 mt-0.5">${isAkhir ? 'Rekonsiliasi kumulatif' : 'PP 58/2023'}</div>
+            <div id="summary-month-rate-sub" class="text-[11px] text-slate-500 mt-0.5">${isAkhir ? 'Rekonsiliasi kumulatif' : 'PP 58/2023'}</div>
           </div>
 
           <div class="bg-white p-3.5 rounded-xl border border-slate-200">
             <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">PPh 21 Terutang Seharusnya</div>
-            <div class="text-base sm:text-lg font-bold text-blue-700">${formatRupiah(pphTerutang)}</div>
-            <div class="text-[11px] text-slate-500 mt-0.5">Sudah dipotong: ${formatRupiah(pajakSudahDipotong)}</div>
+            <div id="summary-month-pph" class="text-base sm:text-lg font-bold text-blue-700">${formatRupiah(pphTerutang)}</div>
+            <div id="summary-month-dipotong" class="text-[11px] text-slate-500 mt-0.5">Sudah dipotong: ${formatRupiah(pajakSudahDipotong)}</div>
           </div>
 
           <div class="bg-white p-3.5 rounded-xl border border-slate-200">
             <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Selisih Bulan Ini</div>
-            <div class="text-base sm:text-lg font-bold ${selisih > 0 ? 'text-rose-600' : selisih < 0 ? 'text-amber-600' : 'text-emerald-600'}">
+            <div id="summary-month-selisih" class="text-base sm:text-lg font-bold ${selisih > 0 ? 'text-rose-600' : selisih < 0 ? 'text-amber-600' : 'text-emerald-600'}">
               ${selisih > 0 ? `+${formatRupiah(selisih)}` : formatRupiah(selisih)}
             </div>
-            <div class="text-[11px] font-semibold ${selisih > 0 ? 'text-rose-500' : selisih < 0 ? 'text-amber-500' : 'text-emerald-500'} mt-0.5">
+            <div id="summary-month-selisih-status" class="text-[11px] font-semibold ${selisih > 0 ? 'text-rose-500' : selisih < 0 ? 'text-amber-500' : 'text-emerald-500'} mt-0.5">
               ${selisih > 0 ? 'Kurang Bayar / Potong' : selisih < 0 ? 'Lebih Bayar / Potong' : 'Sesuai (Nihil)'}
             </div>
           </div>
