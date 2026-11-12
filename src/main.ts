@@ -283,8 +283,14 @@ function attachPegawaiListeners(): void {
   bindText('pegawai-nip', 'nip');
   bindText('pegawai-nik', 'nik');
   bindText('pegawai-npwp', 'npwp');
-  bindText('pegawai-pangkat', 'pangkat_golongan');
   bindText('pegawai-jabatan', 'jabatan');
+
+  // Pangkat select dropdown
+  const pangkatSelect = document.getElementById('pegawai-pangkat') as HTMLSelectElement;
+  pangkatSelect?.addEventListener('change', (e) => {
+    const val = (e.target as HTMLSelectElement).value;
+    appState.updatePegawai('pangkat_golongan', val, false);
+  });
 
   // PTKP select dropdown
   const ptkpSelect = document.getElementById('pegawai-ptkp') as HTMLSelectElement;
