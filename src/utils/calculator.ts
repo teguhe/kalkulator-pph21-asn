@@ -89,8 +89,10 @@ export function calculatePPh21(pegawai: PegawaiData, periode: PeriodeBulan[]): R
   // Check if any month is flagged as akhir periode; if none, default month 12 (index 11)
   const hasAnyAkhir = periode.some(b => b.is_akhir_periode || b.metode_perhitungan === 'AKHIR_PERIODE');
 
-  // Track cumulative tax owed from month 1 onwards across all months
-  let akumulasiPajakTerutang = 0;
+  // Track the start month index for the current active period (e.g. 0 for Jan, 4 for May)
+  let startMonthIndex = 0;
+  // Track cumulative tax owed from non-akhir months within the current active period
+  let akumulasiPajakTerutangPeriode = 0;
 
   for (let i = 0; i < periode.length; i++) {
     const bulan = periode[i];
@@ -108,11 +110,11 @@ export function calculatePPh21(pegawai: PegawaiData, periode: PeriodeBulan[]): R
     const bruto_total = k1_bruto + k2_bruto + k3_bruto + k4_bruto;
     const pajak_sudah_dipotong = k1_pajak + k2_pajak + k3_pajak + k4_pajak;
 
-    // A month is an Akhir Periode if explicitly marked OR if no month was marked and this is December
+    // A month is an Akhir Periode if explicitly marked OR if it's the 12th month (December) closing out the period
     const isAkhir = Boolean(
       bulan.is_akhir_periode || 
       bulan.metode_perhitungan === 'AKHIR_PERIODE' || 
-      (!hasAnyAkhir && i === 11)
+      i === 11
     );
 
     if (!isAkhir) {
@@ -121,7 +123,7 @@ export function calculatePPh21(pegawai: PegawaiData, periode: PeriodeBulan[]): R
       const pph21_terutang = Math.floor(bruto_total * (ter_rate / 100));
       const selisih = pph21_terutang - pajak_sudah_dipotong;
 
-      akumulasiPajakTerutang += pph21_terutang;
+      akumulasiPajakTerutangPeriode += pph21_terutang;
 
       hasilBulanan.push({
         bulan: bulan.bulan,
@@ -141,20 +143,23 @@ export function calculatePPh21(pegawai: PegawaiData, periode: PeriodeBulan[]): R
         }
       });
     } else {
-      // AKHIR PERIODE (Pasal 17 Tahunan / Rekonsiliasi Kumulatif)
-      // Cumulative months from month 1 through current month i+1
-      const monthsUpToHere = periode.slice(0, i + 1);
-      const jumlah_bulan = monthsUpToHere.length;
-      const kode_masa = `01 - ${String(bulan.bulan).padStart(2, '0')}`;
+      // AKHIR PERIODE (Pasal 17 Tahunan / Rekonsiliasi Kumulatif untuk segmen periode berjalan)
+      const monthsInThisPeriod = periode.slice(startMonthIndex, i + 1);
+      const bulanMulaiNum = startMonthIndex + 1;
+      const bulanAkhirNum = bulan.bulan;
+      const namaBulanMulai = periode[startMonthIndex].nama_bulan;
+      const namaBulanAkhir = bulan.nama_bulan;
+      const jumlah_bulan = monthsInThisPeriod.length;
+      const kode_masa = `${String(bulanMulaiNum).padStart(2, '0')} - ${String(bulanAkhirNum).padStart(2, '0')}`;
 
       let total_bruto_akumulasi = 0;
       let total_gaji_akumulasi = 0;
       let total_tpp_akumulasi = 0;
       let total_honor1_akumulasi = 0;
       let total_honor2_akumulasi = 0;
-      let total_pajak_sudah_dipotong_tahunan = 0;
+      let total_pajak_sudah_dipotong_periode = 0;
 
-      for (const m of monthsUpToHere) {
+      for (const m of monthsInThisPeriod) {
         const mkp = m.komponen_penghasilan;
         const g = mkp.penghasilan_1.bruto || 0;
         const t = mkp.penghasilan_2.bruto || 0;
@@ -167,7 +172,7 @@ export function calculatePPh21(pegawai: PegawaiData, periode: PeriodeBulan[]): R
         total_tpp_akumulasi += t;
         total_honor1_akumulasi += h1;
         total_honor2_akumulasi += h2;
-        total_pajak_sudah_dipotong_tahunan += mp;
+        total_pajak_sudah_dipotong_periode += mp;
       }
 
       // Biaya Jabatan: 5% dari Bruto, maksimal 500rb/bulan x jumlah_bulan (maks 6jt/thn)
@@ -193,23 +198,20 @@ export function calculatePPh21(pegawai: PegawaiData, periode: PeriodeBulan[]): R
       const { totalTax: pph21_pasal17_setahun, layers } = calculatePasal17Detailed(pkp);
 
       // PPh 21 Terutang di Bulan Akhir Periode ini:
-      // = PPh 21 Pasal 17 Kumulatif s.d. bulan ini - Pajak yang telah terutang pada bulan-bulan sebelumnya
-      const pajak_terutang_sebelumnya = akumulasiPajakTerutang;
+      // = PPh 21 Pasal 17 Periode ini - Pajak yang telah terutang pada bulan-bulan sebelumnya dalam segmen periode ini
+      const pajak_terutang_sebelumnya = akumulasiPajakTerutangPeriode;
       const pph21_terutang_bulan_terakhir = pph21_pasal17_setahun - pajak_terutang_sebelumnya;
       const selisih_bulan_ini = pph21_terutang_bulan_terakhir - pajak_sudah_dipotong;
-      const selisih_tahunan = pph21_pasal17_setahun - total_pajak_sudah_dipotong_tahunan;
+      const selisih_periode = pph21_pasal17_setahun - total_pajak_sudah_dipotong_periode;
 
-      // Update akumulasi pajak terutang for subsequent months
-      akumulasiPajakTerutang += pph21_terutang_bulan_terakhir;
-
-      // Split withholding khusus periode 1 s.d. bulan ini
-      const rekapPeriode = calculateSplitWithholdingForMonths(monthsUpToHere, pegawai);
+      // Split withholding khusus segmen periode ini
+      const rekapPeriode = calculateSplitWithholdingForMonths(monthsInThisPeriod, pegawai);
 
       const akhirObj: HasilAkhirPeriode = {
-        bulan_mulai: 1,
-        bulan_akhir: bulan.bulan,
-        nama_bulan_mulai: 'Januari',
-        nama_bulan_akhir: bulan.nama_bulan,
+        bulan_mulai: bulanMulaiNum,
+        bulan_akhir: bulanAkhirNum,
+        nama_bulan_mulai: namaBulanMulai,
+        nama_bulan_akhir: namaBulanAkhir,
         kode_masa,
         jumlah_bulan,
         total_bruto_akumulasi,
@@ -228,8 +230,8 @@ export function calculatePPh21(pegawai: PegawaiData, periode: PeriodeBulan[]): R
         pph21_pasal17_setahun,
         pajak_terutang_sebelumnya,
         pph21_terutang_bulan_terakhir,
-        total_pajak_sudah_dipotong_tahunan,
-        selisih_tahunan,
+        total_pajak_sudah_dipotong_tahunan: total_pajak_sudah_dipotong_periode,
+        selisih_tahunan: selisih_periode,
         lapisan_breakdown: layers,
         rekap_bendahara_periode: rekapPeriode
       };
@@ -252,6 +254,10 @@ export function calculatePPh21(pegawai: PegawaiData, periode: PeriodeBulan[]): R
           k4_bruto, k4_pajak
         }
       });
+
+      // Advance start month index and reset period accumulator for the subsequent period
+      startMonthIndex = i + 1;
+      akumulasiPajakTerutangPeriode = 0;
     }
   }
 

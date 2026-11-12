@@ -54,7 +54,7 @@ export function renderBpa2View(): string {
   // Period Options for BPA2
   const periodOptionsHtml = daftarAkhir.map(da => `
     <option value="${da.bulan_akhir}" ${(akhir && akhir.bulan_akhir === da.bulan_akhir) ? 'selected' : ''}>
-      Masa ${da.kode_masa} (${da.nama_bulan_akhir} - ${da.jumlah_bulan} Bln)
+      Masa ${da.kode_masa} (${da.nama_bulan_mulai} - ${da.nama_bulan_akhir}, ${da.jumlah_bulan} Bln)
     </option>
   `).join('');
 
@@ -305,7 +305,7 @@ export function renderBpa2View(): string {
                 </tr>
                 <tr>
                   <td class="py-1 px-3 text-center font-mono text-slate-500 border-r border-slate-300">13</td>
-                  <td class="py-1 px-3 text-slate-800 border-r border-slate-300">PPh Pasal 21 yang Telah Dipotong Masa Sebelumnya${akhir && akhir.jumlah_bulan > 1 ? ` (Masa 01 s.d. ${String(akhir.jumlah_bulan - 1).padStart(2, '0')})` : ''}</td>
+                  <td class="py-1 px-3 text-slate-800 border-r border-slate-300">PPh Pasal 21 yang Telah Dipotong Masa Sebelumnya${akhir && akhir.jumlah_bulan > 1 ? ` (Masa ${String(akhir.bulan_mulai).padStart(2, '0')} s.d. ${String(akhir.bulan_akhir - 1).padStart(2, '0')})` : ''}</td>
                   <td class="py-1 px-3 text-right font-mono text-slate-800">${formatNumber(pph21Sebelumnya)}</td>
                 </tr>
                 <tr class="bg-emerald-50/70 font-bold border-t-2 border-slate-400">

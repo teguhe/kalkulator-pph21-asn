@@ -201,7 +201,7 @@ export function renderHasilRekonsiliasiView(): string {
                   }"
                   data-month="${da.bulan_akhir}"
                 >
-                  <span>Masa ${da.kode_masa} (${da.nama_bulan_akhir})</span>
+                  <span>Masa ${da.kode_masa} (${da.nama_bulan_mulai} - ${da.nama_bulan_akhir})</span>
                   <span class="text-[10px] px-1.5 py-0.5 rounded font-mono ${isActive ? 'bg-indigo-800 text-white' : 'bg-indigo-100 text-indigo-800'}">
                     ${da.jumlah_bulan} Bln
                   </span>
@@ -291,7 +291,7 @@ export function renderHasilRekonsiliasiView(): string {
               </div>
               <div class="mt-3 p-3 bg-slate-50 rounded-lg text-[11px] text-slate-600 space-y-1">
                 <div class="flex justify-between">
-                  <span>PPh 21 telah diperhitungkan masa 1 s.d. ${akhir.jumlah_bulan - 1}:</span>
+                  <span>PPh 21 telah diperhitungkan masa ${akhir.bulan_mulai} s.d. ${akhir.bulan_akhir - 1}:</span>
                   <span class="font-mono font-semibold">${formatRupiah(akhir.pajak_terutang_sebelumnya)}</span>
                 </div>
                 <div class="flex justify-between font-bold text-slate-900 border-t border-slate-200 pt-1">
