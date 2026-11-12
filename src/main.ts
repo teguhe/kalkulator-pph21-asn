@@ -212,27 +212,70 @@ function attachEventListeners(): void {
     appState.setActiveTab('admin');
   });
 
-  // Quick Login Buttons in Modal
-  document.querySelectorAll('.btn-quick-login').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const email = (e.currentTarget as HTMLElement).dataset.quickLogin;
+  // Real Google Sign-In Button
+  const btnDoGoogle = document.getElementById('btn-do-google-login');
+  btnDoGoogle?.addEventListener('click', async () => {
+    if (!authService.isFirebaseConfigured()) {
+      appState.showToast('warning', 'Konfigurasi Diperlukan', 'Kredensial Firebase belum terhubung. Silakan isi form di bawah.');
+      document.getElementById('section-firebase-modal-config')?.classList.remove('hidden');
+      return;
+    }
+
+    const originalHtml = btnDoGoogle.innerHTML;
+    try {
+      btnDoGoogle.setAttribute('disabled', 'true');
+      btnDoGoogle.classList.add('opacity-75', 'cursor-not-allowed');
+      btnDoGoogle.innerHTML = `
+        <span class="inline-block w-4 h-4 border-2 border-slate-700 border-t-transparent rounded-full animate-spin"></span>
+        <span>Menghubungkan ke Google...</span>
+      `;
+
+      const user = await authService.signInWithGoogle();
       closeLogin();
-      await authService.signInWithGoogleMock(email);
-      logService.recordLog('LOGIN', `Login sukses menggunakan akun: ${email}`);
-      appState.showToast('success', 'Login Berhasil', `Masuk sebagai ${email}.`);
-    });
+      logService.recordLog('LOGIN', `Login sukses dengan akun Google: ${user.email} (${user.isAdmin ? 'Admin' : 'Pegawai'})`);
+
+      if (user.isAdmin) {
+        appState.showToast('success', 'Akses Administrator Terbuka', `Selamat datang, ${user.displayName || user.email} (Administrator).`);
+      } else {
+        appState.showToast('success', 'Login Berhasil', `Selamat datang, ${user.displayName || user.email} (+25 Kuota Harian).`);
+      }
+    } catch (err: any) {
+      console.error('Google Sign-In Error:', err);
+      appState.showToast('error', 'Gagal Login Google', err.message || 'Terjadi kesalahan saat masuk dengan Google.');
+    } finally {
+      btnDoGoogle.removeAttribute('disabled');
+      btnDoGoogle.classList.remove('opacity-75', 'cursor-not-allowed');
+      btnDoGoogle.innerHTML = originalHtml;
+    }
   });
 
-  // Custom Login Form
-  const formCustomLogin = document.getElementById('form-custom-login') as HTMLFormElement;
-  formCustomLogin?.addEventListener('submit', async (e) => {
+  // Toggle Firebase Config in Modal
+  const btnToggleFb = document.getElementById('btn-toggle-modal-firebase-config');
+  btnToggleFb?.addEventListener('click', () => {
+    const sec = document.getElementById('section-firebase-modal-config');
+    sec?.classList.toggle('hidden');
+  });
+
+  // Modal Firebase Config Form
+  const formModalFb = document.getElementById('form-modal-firebase-config') as HTMLFormElement;
+  formModalFb?.addEventListener('submit', (e) => {
     e.preventDefault();
-    const email = (document.getElementById('input-login-email') as HTMLInputElement).value;
-    const name = (document.getElementById('input-login-name') as HTMLInputElement).value;
-    closeLogin();
-    await authService.signInWithGoogleMock(email, name);
-    logService.recordLog('LOGIN', `Login sukses menggunakan akun kustom: ${email}`);
-    appState.showToast('success', 'Login Berhasil', `Masuk sebagai ${email} (+25 Kuota Harian).`);
+    const apiKey = (document.getElementById('fb-modal-api-key') as HTMLInputElement).value.trim();
+    const authDomain = (document.getElementById('fb-modal-auth-domain') as HTMLInputElement).value.trim();
+    const projectId = (document.getElementById('fb-modal-project-id') as HTMLInputElement).value.trim();
+    const appId = (document.getElementById('fb-modal-app-id') as HTMLInputElement)?.value.trim() || undefined;
+
+    try {
+      const ok = authService.saveFirebaseConfig({ apiKey, authDomain, projectId, appId });
+      if (ok) {
+        appState.showToast('success', 'Firebase Terhubung', 'Konfigurasi Firebase berhasil disimpan. Sekarang Anda dapat Masuk dengan Akun Google.');
+        appState.notify();
+      } else {
+        appState.showToast('error', 'Gagal Inisialisasi', 'Konfigurasi tersimpan namun inisialisasi Firebase gagal. Periksa kembali kredensial Anda.');
+      }
+    } catch (err: any) {
+      appState.showToast('error', 'Gagal', err.message || 'Gagal menyimpan konfigurasi.');
+    }
   });
 
   // Toast Dismissal
@@ -544,18 +587,14 @@ function attachFaqListeners(): void {
 }
 
 function attachAdminListeners(): void {
-  // Super admin login buttons
-  const btnLoginSuper1 = document.getElementById('btn-admin-login-super1');
-  const btnLoginSuper2 = document.getElementById('btn-admin-login-super2');
-
-  const loginSuper = async (email: string) => {
-    await authService.signInWithGoogleMock(email);
-    logService.recordLog('LOGIN', `Login Admin: ${email}`);
-    appState.showToast('success', 'Akses Admin Terbuka', `Masuk sebagai ${email}.`);
-  };
-
-  btnLoginSuper1?.addEventListener('click', () => loginSuper('teguhe@gmail.com'));
-  btnLoginSuper2?.addEventListener('click', () => loginSuper('teguhe2@gmail.com'));
+  // Admin Google Login button (for non-admin users)
+  const btnAdminOpenGoogle = document.getElementById('btn-admin-open-google-login');
+  btnAdminOpenGoogle?.addEventListener('click', async () => {
+    if (authService.getCurrentUser()) {
+      await authService.signOut();
+    }
+    document.getElementById('modal-login')?.classList.remove('hidden');
+  });
 
   // Form Add Admin
   const formAddAdmin = document.getElementById('form-add-admin') as HTMLFormElement;
@@ -614,10 +653,19 @@ function attachAdminListeners(): void {
     const apiKey = (document.getElementById('fb-api-key') as HTMLInputElement).value.trim();
     const authDomain = (document.getElementById('fb-auth-domain') as HTMLInputElement).value.trim();
     const projectId = (document.getElementById('fb-project-id') as HTMLInputElement).value.trim();
+    const appId = (document.getElementById('fb-app-id') as HTMLInputElement)?.value.trim() || undefined;
 
-    authService.saveFirebaseConfig({ apiKey, authDomain, projectId });
-    appState.showToast('success', 'Konfigurasi Disimpan', 'Konfigurasi Firebase lokal berhasil diperbarui.');
-    appState.notify();
+    try {
+      const ok = authService.saveFirebaseConfig({ apiKey, authDomain, projectId, appId });
+      if (ok) {
+        appState.showToast('success', 'Konfigurasi Disimpan', 'Konfigurasi Firebase lokal berhasil diperbarui dan aktif.');
+        appState.notify();
+      } else {
+        appState.showToast('error', 'Gagal Inisialisasi', 'Konfigurasi tersimpan namun inisialisasi Firebase gagal. Periksa API Key dan Project ID.');
+      }
+    } catch (err: any) {
+      appState.showToast('error', 'Gagal', err.message || 'Gagal menyimpan konfigurasi.');
+    }
   });
 
   // Export CSV

@@ -32,13 +32,19 @@ export function renderAdminView(): string {
             </div>
           `}
 
-          <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button id="btn-admin-login-super1" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition">
-              <span>Masuk sebagai teguhe@gmail.com (Super Admin)</span>
+          <div class="flex flex-col items-center justify-center gap-3">
+            <button id="btn-admin-open-google-login" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer">
+              <svg class="w-4 h-4" viewBox="0 0 24 24">
+                <path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+              <span>${currentUser ? 'Ganti Akun Google (Login Administrator)' : 'Masuk dengan Akun Google'}</span>
             </button>
-            <button id="btn-admin-login-super2" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-xs transition">
-              <span>Masuk sebagai teguhe2@gmail.com</span>
-            </button>
+            <p class="text-[11px] text-slate-500 max-w-md">
+              Akses administrator terverifikasi otomatis melalui autentikasi Google resmi.
+            </p>
           </div>
         </div>
       </div>
@@ -192,32 +198,42 @@ export function renderAdminView(): string {
 
           <!-- Konfigurasi Firebase Live -->
           <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
-            <div class="flex items-center gap-2 pb-3 mb-3 border-b border-slate-100">
-              <svg class="w-5 h-5 text-orange-500" viewBox="0 0 24 24" fill="currentColor"><path d="M3.89 15.672L6.255.474A.5.5 0 0 1 7.15.28l3.49 6.55-6.75 8.842zm14.839 3.013l-1.89-11.758a.5.5 0 0 0-.87-.271L3.08 18.685l7.98 4.51a2 2 0 0 0 1.94 0l5.73-3.01zM13.63 8.358l-2.42-4.63a.5.5 0 0 0-.88 0l-7.79 14.86 11.09-10.23z"/></svg>
-              <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Konfigurasi Firebase</h3>
+            <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+              <div class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-orange-500" viewBox="0 0 24 24" fill="currentColor"><path d="M3.89 15.672L6.255.474A.5.5 0 0 1 7.15.28l3.49 6.55-6.75 8.842zm14.839 3.013l-1.89-11.758a.5.5 0 0 0-.87-.271L3.08 18.685l7.98 4.51a2 2 0 0 0 1.94 0l5.73-3.01zM13.63 8.358l-2.42-4.63a.5.5 0 0 0-.88 0l-7.79 14.86 11.09-10.23z"/></svg>
+                <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Konfigurasi Firebase</h3>
+              </div>
+              ${authService.isFirebaseConfigured() 
+                ? '<span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">🟢 Terhubung</span>' 
+                : '<span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">🟠 Belum Terhubung</span>'}
             </div>
 
             <p class="text-[11px] text-slate-500 mb-3">
-              Opsional: Masukkan kredensial Firebase project Anda jika ingin menghubungkan Google Sign-In & Firestore live.
+              Kredensial Firebase project untuk mengaktifkan Google Sign-In & pencatatan live. Kredensial ini disimpan aman di browser lokal Anda.
             </p>
 
             <form id="form-firebase-config" class="space-y-2.5 text-xs">
               <div>
                 <label class="block text-[10px] font-semibold text-slate-600 mb-0.5">Firebase API Key</label>
-                <input type="text" id="fb-api-key" value="${firebaseConfig?.apiKey || ''}" placeholder="AIzaSy..." 
+                <input type="text" id="fb-api-key" value="${firebaseConfig?.apiKey || ''}" required placeholder="AIzaSy..." 
                   class="w-full px-2.5 py-1.5 border border-slate-300 rounded font-mono text-xs outline-none" />
               </div>
               <div>
                 <label class="block text-[10px] font-semibold text-slate-600 mb-0.5">Auth Domain</label>
-                <input type="text" id="fb-auth-domain" value="${firebaseConfig?.authDomain || ''}" placeholder="project-id.firebaseapp.com" 
+                <input type="text" id="fb-auth-domain" value="${firebaseConfig?.authDomain || ''}" required placeholder="project-id.firebaseapp.com" 
                   class="w-full px-2.5 py-1.5 border border-slate-300 rounded font-mono text-xs outline-none" />
               </div>
               <div>
                 <label class="block text-[10px] font-semibold text-slate-600 mb-0.5">Project ID</label>
-                <input type="text" id="fb-project-id" value="${firebaseConfig?.projectId || ''}" placeholder="project-id" 
+                <input type="text" id="fb-project-id" value="${firebaseConfig?.projectId || ''}" required placeholder="project-id" 
                   class="w-full px-2.5 py-1.5 border border-slate-300 rounded font-mono text-xs outline-none" />
               </div>
-              <button type="submit" class="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold transition mt-2">
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-600 mb-0.5">App ID (Opsional)</label>
+                <input type="text" id="fb-app-id" value="${firebaseConfig?.appId || ''}" placeholder="1:123456789:web:abcdef" 
+                  class="w-full px-2.5 py-1.5 border border-slate-300 rounded font-mono text-xs outline-none" />
+              </div>
+              <button type="submit" class="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold transition mt-2 cursor-pointer">
                 Simpan Konfigurasi Firebase
               </button>
             </form>

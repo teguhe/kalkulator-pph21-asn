@@ -1,5 +1,15 @@
-import { SUPER_ADMIN_EMAILS, QUOTA_CONFIG } from '../../taxConstants';
-import { UserProfile, QuotaState, LogItem } from '../types';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { 
+  getAuth, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  signOut as fbSignOut, 
+  onAuthStateChanged, 
+  Auth,
+  User as FirebaseUser 
+} from 'firebase/auth';
+import { SUPER_ADMIN_EMAILS } from '../../taxConstants';
+import { UserProfile } from '../types';
 
 const ADMIN_STORAGE_KEY = 'pph21_custom_admins';
 const FIREBASE_CONFIG_KEY = 'pph21_firebase_config';
@@ -15,44 +25,117 @@ export interface FirebaseClientConfig {
 }
 
 class AuthService {
+  private app: FirebaseApp | null = null;
+  private auth: Auth | null = null;
   private currentUser: UserProfile | null = null;
   private listeners: ((user: UserProfile | null) => void)[] = [];
   private customAdmins: string[] = [];
+  private isFirebaseInitialized: boolean = false;
 
   constructor() {
     this.loadCustomAdmins();
-    this.loadPersistedUser();
+    this.initFirebase();
+  }
+
+  private getStorage(key: string): string | null {
+    if (typeof localStorage === 'undefined') return null;
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  }
+
+  private setStorage(key: string, value: string): void {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.warn(`Could not save ${key} to storage`, e);
+    }
+  }
+
+  private removeStorage(key: string): void {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // ignore
+    }
   }
 
   private loadCustomAdmins(): void {
     try {
-      const stored = localStorage.getItem(ADMIN_STORAGE_KEY);
+      const stored = this.getStorage(ADMIN_STORAGE_KEY);
       if (stored) {
         this.customAdmins = JSON.parse(stored);
       }
-    } catch (e) {
+    } catch {
       this.customAdmins = [];
     }
   }
 
   private saveCustomAdmins(): void {
-    localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(this.customAdmins));
+    this.setStorage(ADMIN_STORAGE_KEY, JSON.stringify(this.customAdmins));
   }
 
-  private loadPersistedUser(): void {
-    try {
-      const stored = localStorage.getItem(CURRENT_USER_KEY);
-      if (stored) {
-        const u = JSON.parse(stored);
-        this.currentUser = {
-          ...u,
-          isAdmin: this.checkIsAdmin(u.email),
-          isSuperAdmin: this.checkIsSuperAdmin(u.email)
-        };
-      }
-    } catch {
+  /**
+   * Initializes Firebase from localStorage or import.meta.env variables
+   */
+  public initFirebase(): boolean {
+    const config = this.getFirebaseConfig();
+    if (!config || !config.apiKey || !config.authDomain || !config.projectId) {
+      this.isFirebaseInitialized = false;
+      this.auth = null;
+      // Do not trust local storage user if Firebase is not active
       this.currentUser = null;
+      this.removeStorage(CURRENT_USER_KEY);
+      return false;
     }
+
+    try {
+      if (getApps().length === 0) {
+        this.app = initializeApp(config);
+      } else {
+        this.app = getApp();
+      }
+      this.auth = getAuth(this.app);
+      this.isFirebaseInitialized = true;
+
+      // Subscribe to real Firebase authentication state changes
+      onAuthStateChanged(this.auth, (fbUser: FirebaseUser | null) => {
+        if (fbUser && fbUser.email) {
+          const email = fbUser.email.toLowerCase().trim();
+          const user: UserProfile = {
+            uid: fbUser.uid,
+            email: fbUser.email,
+            displayName: fbUser.displayName || fbUser.email.split('@')[0] || 'Pengguna',
+            photoURL: fbUser.photoURL || undefined,
+            isAdmin: this.checkIsAdmin(email),
+            isSuperAdmin: this.checkIsSuperAdmin(email)
+          };
+          this.currentUser = user;
+          this.setStorage(CURRENT_USER_KEY, JSON.stringify(user));
+        } else {
+          this.currentUser = null;
+          this.removeStorage(CURRENT_USER_KEY);
+        }
+        this.notify();
+      });
+
+      return true;
+    } catch (err) {
+      console.error('Inisialisasi Firebase gagal:', err);
+      this.isFirebaseInitialized = false;
+      this.auth = null;
+      this.currentUser = null;
+      this.removeStorage(CURRENT_USER_KEY);
+      return false;
+    }
+  }
+
+  public isFirebaseConfigured(): boolean {
+    return this.isFirebaseInitialized && this.auth !== null;
   }
 
   public checkIsSuperAdmin(email: string): boolean {
@@ -79,33 +162,86 @@ class AuthService {
   }
 
   private notify(): void {
-    this.listeners.forEach(cb => cb(this.currentUser));
+    this.listeners.forEach(cb => {
+      try {
+        cb(this.currentUser);
+      } catch (e) {
+        console.error('Error in auth listener:', e);
+      }
+    });
   }
 
   /**
-   * Simulated Google Sign In for instant testing or offline use
+   * Real Google Sign-In using Firebase Auth popup
    */
-  public async signInWithGoogleMock(emailInput?: string, displayNameInput?: string): Promise<UserProfile> {
-    const email = emailInput || 'teguhe@gmail.com';
-    const displayName = displayNameInput || (email.startsWith('teguhe') ? 'Teguh (Super Admin)' : 'Pegawai ASN');
-    
-    const user: UserProfile = {
-      uid: 'user_' + Math.random().toString(36).substring(2, 9),
-      email: email.trim(),
-      displayName,
-      isAdmin: this.checkIsAdmin(email),
-      isSuperAdmin: this.checkIsSuperAdmin(email)
-    };
+  public async signInWithGoogle(): Promise<UserProfile> {
+    if (!this.auth) {
+      this.initFirebase();
+    }
+    if (!this.auth) {
+      throw new Error('Konfigurasi Firebase belum diatur. Silakan atur konfigurasi Firebase project Anda terlebih dahulu.');
+    }
 
-    this.currentUser = user;
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-    this.notify();
-    return user;
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
+
+    try {
+      const result = await signInWithPopup(this.auth, provider);
+      const fbUser = result.user;
+      if (!fbUser || !fbUser.email) {
+        throw new Error('Autentikasi Google berhasil tetapi informasi email tidak ditemukan.');
+      }
+
+      const email = fbUser.email.toLowerCase().trim();
+      const user: UserProfile = {
+        uid: fbUser.uid,
+        email: fbUser.email,
+        displayName: fbUser.displayName || fbUser.email.split('@')[0] || 'Pengguna',
+        photoURL: fbUser.photoURL || undefined,
+        isAdmin: this.checkIsAdmin(email),
+        isSuperAdmin: this.checkIsSuperAdmin(email)
+      };
+
+      this.currentUser = user;
+      this.setStorage(CURRENT_USER_KEY, JSON.stringify(user));
+      this.notify();
+      return user;
+    } catch (err: any) {
+      const code = err?.code || '';
+      let friendlyMessage = err?.message || 'Gagal masuk dengan Google.';
+
+      if (code === 'auth/popup-closed-by-user') {
+        friendlyMessage = 'Jendela login Google ditutup sebelum proses autentikasi selesai.';
+      } else if (code === 'auth/unauthorized-domain') {
+        friendlyMessage = 'Domain ini belum diizinkan di Firebase Console. Buka Firebase Console > Authentication > Settings > Authorized domains dan tambahkan domain Anda.';
+      } else if (code === 'auth/popup-blocked') {
+        friendlyMessage = 'Jendela popup login diblokir oleh browser. Harap izinkan popup untuk situs ini.';
+      } else if (code === 'auth/cancelled-popup-request') {
+        friendlyMessage = 'Proses login dibatalkan karena ada jendela baru yang dibuka.';
+      } else if (code === 'auth/invalid-api-key') {
+        friendlyMessage = 'Firebase API Key tidak valid. Periksa konfigurasi Firebase Anda.';
+      } else if (code === 'auth/network-request-failed') {
+        friendlyMessage = 'Koneksi jaringan gagal saat menghubungi server Google.';
+      }
+
+      const customError = new Error(friendlyMessage);
+      (customError as any).code = code;
+      throw customError;
+    }
   }
 
   public async signOut(): Promise<void> {
+    if (this.auth) {
+      try {
+        await fbSignOut(this.auth);
+      } catch (err) {
+        console.warn('Firebase signout warning:', err);
+      }
+    }
     this.currentUser = null;
-    localStorage.removeItem(CURRENT_USER_KEY);
+    this.removeStorage(CURRENT_USER_KEY);
     this.notify();
   }
 
@@ -162,16 +298,47 @@ class AuthService {
 
   // Firebase Config Storage
   public getFirebaseConfig(): FirebaseClientConfig | null {
+    // 1. LocalStorage
     try {
-      const stored = localStorage.getItem(FIREBASE_CONFIG_KEY);
-      return stored ? JSON.parse(stored) : null;
+      const stored = this.getStorage(FIREBASE_CONFIG_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.apiKey && parsed.authDomain && parsed.projectId) {
+          return parsed;
+        }
+      }
     } catch {
-      return null;
+      // ignore
     }
+
+    // 2. Vite Environment Variables
+    const envApiKey = (import.meta as any).env?.VITE_FIREBASE_API_KEY;
+    const envAuthDomain = (import.meta as any).env?.VITE_FIREBASE_AUTH_DOMAIN;
+    const envProjectId = (import.meta as any).env?.VITE_FIREBASE_PROJECT_ID;
+    const envStorageBucket = (import.meta as any).env?.VITE_FIREBASE_STORAGE_BUCKET;
+    const envMessagingSenderId = (import.meta as any).env?.VITE_FIREBASE_MESSAGING_SENDER_ID;
+    const envAppId = (import.meta as any).env?.VITE_FIREBASE_APP_ID;
+
+    if (envApiKey && envAuthDomain && envProjectId) {
+      return {
+        apiKey: envApiKey,
+        authDomain: envAuthDomain,
+        projectId: envProjectId,
+        storageBucket: envStorageBucket,
+        messagingSenderId: envMessagingSenderId,
+        appId: envAppId
+      };
+    }
+
+    return null;
   }
 
-  public saveFirebaseConfig(config: FirebaseClientConfig): void {
-    localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(config));
+  public saveFirebaseConfig(config: FirebaseClientConfig): boolean {
+    if (!config.apiKey || !config.authDomain || !config.projectId) {
+      throw new Error('Firebase API Key, Auth Domain, dan Project ID wajib diisi.');
+    }
+    this.setStorage(FIREBASE_CONFIG_KEY, JSON.stringify(config));
+    return this.initFirebase();
   }
 }
 
