@@ -79,17 +79,6 @@ export function renderModals(): string {
           </button>
         </div>
 
-        <!-- Security Notice -->
-        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl mb-4 text-[11px] text-slate-600 leading-relaxed">
-          <div class="font-semibold text-slate-800 flex items-center gap-1.5 mb-1">
-            <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            Keamanan Akses Administrator
-          </div>
-          Hak akses Administrator hanya diberikan jika email Google yang diautentikasi cocok dengan <strong>teguhe@gmail.com</strong>, <strong>teguhe2@gmail.com</strong>, atau email admin yang telah disetujui.
-        </div>
-
         <!-- Firebase Config Section (Collapsible) -->
         <div class="pt-2 border-t border-slate-100">
           <button id="btn-toggle-modal-firebase-config" type="button" class="text-[11px] text-slate-500 hover:text-slate-800 flex items-center justify-between w-full py-1 cursor-pointer">
