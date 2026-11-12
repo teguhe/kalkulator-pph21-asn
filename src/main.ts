@@ -438,9 +438,62 @@ function attachBpa2Listeners(): void {
     appState.setSelectedBpa2NPWP(val);
   });
 
+  const inputNo = document.getElementById('input-bpa2-no') as HTMLInputElement;
+  inputNo?.addEventListener('input', (e) => {
+    const val = (e.target as HTMLInputElement).value;
+    const display = document.getElementById('bpa2-no-display');
+    if (display) display.textContent = val;
+  });
+
+  const inputTgl = document.getElementById('input-bpa2-tgl') as HTMLInputElement;
+  inputTgl?.addEventListener('input', (e) => {
+    const val = (e.target as HTMLInputElement).value;
+    const display = document.getElementById('bpa2-tgl-display');
+    if (display) display.textContent = val;
+  });
+
   const btnPrint = document.getElementById('btn-print-bpa2');
   btnPrint?.addEventListener('click', () => {
     window.print();
+  });
+
+  const btnLoadDummy = document.getElementById('btn-bpa2-load-dummy');
+  btnLoadDummy?.addEventListener('click', () => {
+    appState.loadDummyTemplate();
+  });
+
+  const btnDownloadHtml = document.getElementById('btn-download-bpa2-html');
+  btnDownloadHtml?.addEventListener('click', () => {
+    const container = document.getElementById('bpa2-print-container');
+    if (!container) return;
+    const safeName = (appState.dataset.pegawai.nama || 'ASN').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const title = `Formulir_1721_BPA2_${safeName}`;
+    const htmlContent = `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>${title}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @page { size: A4 portrait; margin: 10mm 12mm; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; padding: 20px; }
+    @media print { body { background: white; padding: 0; } }
+  </style>
+</head>
+<body class="flex justify-center">
+  <div style="max-width: 800px; width: 100%;">
+    ${container.outerHTML}
+  </div>
+</body>
+</html>`;
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+    appState.showToast('success', 'File Diunduh', `Formulir BPA2 mandiri telah diunduh sebagai ${a.download}.`);
   });
 }
 

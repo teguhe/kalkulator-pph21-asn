@@ -1,5 +1,5 @@
 import { appState } from '../state/appState';
-import { formatRupiah, formatNPWP, formatDateIndo } from '../utils/formatters';
+import { formatRupiah, formatNPWP, formatDateIndo, formatNumber } from '../utils/formatters';
 
 export function renderBpa2View(): string {
   const { dataset, calculation, selectedBpa2NPWP } = appState;
@@ -42,6 +42,9 @@ export function renderBpa2View(): string {
 
   const currentYear = new Date().getFullYear();
   const nomorBpa2 = `1.1-12.${String(currentYear).slice(-2)}-0000108`;
+  const tanggalHariIni = formatDateIndo();
+
+  const isEmpty = !p.nama && brutoTotal === 0;
 
   // NPWP filter options
   const npwpOptionsHtml = `
@@ -55,29 +58,56 @@ export function renderBpa2View(): string {
 
   return `
     <div class="space-y-6">
+      ${isEmpty ? `
+        <!-- Empty State Advice Banner -->
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 no-print">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+              <div class="text-sm font-bold text-amber-900">Data Pegawai & Penghasilan Masih Kosong</div>
+              <div class="text-xs text-amber-700">Formulir 1721-BPA2 siap dicetak setelah Anda mengisi data pegawai dan penghasilan bulanan, atau klik tombol di samping untuk memuat sampel.</div>
+            </div>
+          </div>
+          <button id="btn-bpa2-load-dummy" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition shrink-0">
+            Muat Template Dummy ASN
+          </button>
+        </div>
+      ` : ''}
+
       <!-- Toolbar (Cetak & Filter) - Hidden in Print -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs no-print">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs no-print">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
             <div>
               <label class="block text-xs font-semibold text-slate-700 mb-1">Entitas Pemotong Pajak</label>
-              <select id="select-bpa2-npwp" class="px-3 py-1.5 text-xs font-medium border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+              <select id="select-bpa2-npwp" class="w-full px-3 py-1.5 text-xs font-medium border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
                 ${npwpOptionsHtml}
               </select>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor Bukti Potong</label>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor Bukti Pemotongan</label>
               <input type="text" id="input-bpa2-no" value="${nomorBpa2}" 
-                class="px-3 py-1.5 text-xs font-mono border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                class="w-full px-3 py-1.5 text-xs font-mono border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Kota & Tanggal Cetak</label>
+              <input type="text" id="input-bpa2-tgl" value="${currentKota}, ${tanggalHariIni}" 
+                class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
             </div>
           </div>
 
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 pt-2 lg:pt-0 shrink-0">
+            <button id="btn-download-bpa2-html" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl border border-slate-300 transition shadow-xs" title="Unduh file dokumen HTML mandiri yang siap dibuka dan dicetak kapan saja secara offline">
+              <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Unduh File HTML</span>
+            </button>
             <button id="btn-print-bpa2" class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-sm transition">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
               </svg>
-              <span>Cetak / Cetak PDF (A4)</span>
+              <span>Cetak / Print PDF (A4)</span>
             </button>
           </div>
         </div>
@@ -117,7 +147,7 @@ export function renderBpa2View(): string {
         <div class="flex items-center justify-between text-xs mb-3 border-b border-slate-300 pb-2">
           <div>
             <span class="font-semibold text-slate-700">Nomor Bukti Pemotongan:</span>
-            <span class="font-mono font-bold text-slate-950 ml-1 px-2 py-0.5 bg-slate-100 rounded border border-slate-300">${nomorBpa2}</span>
+            <span id="bpa2-no-display" class="font-mono font-bold text-slate-950 ml-1 px-2 py-0.5 bg-slate-100 rounded border border-slate-300">${nomorBpa2}</span>
           </div>
           <div class="text-[11px] text-slate-500">
             Status Pembetulan: <strong>0 (Normal)</strong>
@@ -286,14 +316,18 @@ export function renderBpa2View(): string {
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-200">
-                ${rekapList.map(r => `
+                ${rekapList.length > 0 ? rekapList.map(r => `
                   <tr>
                     <td class="py-1 px-3 font-mono">${r.npwp_bendahara}</td>
                     <td class="py-1 px-3 font-medium text-slate-800">${r.nama_keterangan}</td>
                     <td class="py-1 px-3 text-right font-mono">${formatNumber(r.total_bruto)}</td>
                     <td class="py-1 px-3 text-right font-mono font-semibold">${formatNumber(r.total_pajak_dipotong)}</td>
                   </tr>
-                `).join('')}
+                `).join('') : `
+                  <tr>
+                    <td colspan="4" class="py-2 px-3 text-center text-slate-400">Belum ada rincian pemotongan bendahara.</td>
+                  </tr>
+                `}
               </tbody>
             </table>
           </div>
@@ -313,7 +347,7 @@ export function renderBpa2View(): string {
 
             <div class="text-center flex flex-col items-center justify-between">
               <div>
-                <div>${currentKota}, ${formatDateIndo()}</div>
+                <div id="bpa2-tgl-display">${currentKota}, ${tanggalHariIni}</div>
                 <div class="font-bold text-slate-900 mt-0.5">Bendahara Pengeluaran,</div>
               </div>
               <div class="my-6 text-slate-300 font-mono text-[10px] italic border-b border-dashed border-slate-300 px-8 py-2">
