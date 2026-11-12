@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 font-sans antialiased min-h-screen selection:bg-emerald-500 selection:text-white;
+  }
+}
+
+/* Print styles for BPA2 */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #bpa2-print-container, #bpa2-print-container * {
+    visibility: visible;
+  }
+  #bpa2-print-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: white;
+    color: black;
+  }
+  .no-print {
+    display: none !important;
+  }
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

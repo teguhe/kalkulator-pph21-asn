@@ -1,0 +1,408 @@
+{
+  "app_version": "1.0.0",
+  "exported_at": "2026-11-12T10:37:00+07:00",
+  "pegawai": {
+    "nama": "Budi Santoso, S.Kom., M.T.",
+    "nik": "3373011505850001",
+    "npwp": "3373011505850001",
+    "nip": "198505152010011005",
+    "pangkat_golongan": "Pembina (IV/a)",
+    "jabatan": "Pranata Komputer Ahli Madya",
+    "status_ptkp": "K/2",
+    "kategori_ter": "B",
+    "persen_iuran_pensiun": 4.75,
+    "instansi": {
+      "nama_instansi": "Dinas Komunikasi dan Informatika",
+      "nama_bendahara_utama": "Siti Aminah, S.E.",
+      "nip_bendahara_utama": "198808122011012003",
+      "npwp_instansi_utama": "001234567505000",
+      "kota_penandatangan": "Salatiga"
+    }
+  },
+  "periode_bulanan": [
+    {
+      "bulan": 1,
+      "nama_bulan": "Januari",
+      "metode_perhitungan": "TER_BULANAN",
+      "is_akhir_periode": false,
+      "komponen_penghasilan": {
+        "penghasilan_1": {
+          "label": "Gaji Plus Tunjangan Melekat",
+          "bruto": 7850000,
+          "pajak_dipotong": 117750,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_2": {
+          "label": "Tunjangan Tambahan Penghasilan (TPP)",
+          "bruto": 9500000,
+          "pajak_dipotong": 760000,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_3": {
+          "label": "Penghasilan Lainnya 1 (Upah Pungut / Honor)",
+          "bruto": 0,
+          "pajak_dipotong": 0,
+          "npwp_bendahara": ""
+        },
+        "penghasilan_4": {
+          "label": "Penghasilan Lainnya 2 (Honor Lintas OPD)",
+          "bruto": 0,
+          "pajak_dipotong": 0,
+          "npwp_bendahara": ""
+        }
+      }
+    },
+    {
+      "bulan": 2,
+      "nama_bulan": "Februari",
+      "metode_perhitungan": "TER_BULANAN",
+      "is_akhir_periode": false,
+      "komponen_penghasilan": {
+        "penghasilan_1": {
+          "label": "Gaji Plus Tunjangan Melekat",
+          "bruto": 7850000,
+          "pajak_dipotong": 117750,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_2": {
+          "label": "Tunjangan Tambahan Penghasilan (TPP)",
+          "bruto": 9500000,
+          "pajak_dipotong": 760000,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_3": {
+          "label": "Penghasilan Lainnya 1 (Upah Pungut / Honor)",
+          "bruto": 0,
+          "pajak_dipotong": 0,
+          "npwp_bendahara": ""
+        },
+        "penghasilan_4": {
+          "label": "Penghasilan Lainnya 2 (Honor Lintas OPD)",
+          "bruto": 0,
+          "pajak_dipotong": 0,
+          "npwp_bendahara": ""
+        }
+      }
+    },
+    {
+      "bulan": 3,
+      "nama_bulan": "Maret",
+      "metode_perhitungan": "TER_BULANAN",
+      "is_akhir_periode": false,
+      "komponen_penghasilan": {
+        "penghasilan_1": {
+          "label": "Gaji Plus Tunjangan Melekat",
+          "bruto": 7850000,
+          "pajak_dipotong": 117750,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_2": {
+          "label": "Tunjangan Tambahan Penghasilan (TPP)",
+          "bruto": 9500000,
+          "pajak_dipotong": 760000,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_3": {
+          "label": "Penghasilan Lainnya 1 (Upah Pungut / Honor)",
+          "bruto": 2500000,
+          "pajak_dipotong": 125000,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_4": {
+          "label": "Penghasilan Lainnya 2 (Honor Lintas OPD)",
+          "bruto": 0,
+          "pajak_dipotong": 0,
+          "npwp_bendahara": ""
+        }
+      }
+    },
+    {
+      "bulan": 4,
+      "nama_bulan": "April",
+      "metode_perhitungan": "TER_BULANAN",
+      "is_akhir_periode": false,
+      "komponen_penghasilan": {
+        "penghasilan_1": {
+          "label": "Gaji Plus Tunjangan Melekat",
+          "bruto": 7850000,
+          "pajak_dipotong": 117750,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_2": {
+          "label": "Tunjangan Tambahan Penghasilan (TPP)",
+          "bruto": 9500000,
+          "pajak_dipotong": 760000,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_3": {
+          "label": "Penghasilan Lainnya 1 (Upah Pungut / Honor)",
+          "bruto": 0,
+          "pajak_dipotong": 0,
+          "npwp_bendahara": ""
+        },
+        "penghasilan_4": {
+          "label": "Penghasilan Lainnya 2 (Honor Lintas OPD)",
+          "bruto": 1500000,
+          "pajak_dipotong": 75000,
+          "npwp_bendahara": "009876543505000"
+        }
+      }
+    },
+    {
+      "bulan": 5,
+      "nama_bulan": "Mei",
+      "metode_perhitungan": "TER_BULANAN",
+      "is_akhir_periode": false,
+      "komponen_penghasilan": {
+        "penghasilan_1": {
+          "label": "Gaji Plus Tunjangan Melekat",
+          "bruto": 7850000,
+          "pajak_dipotong": 117750,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_2": {
+          "label": "Tunjangan Tambahan Penghasilan (TPP)",
+          "bruto": 9500000,
+          "pajak_dipotong": 760000,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_3": {
+          "label": "Penghasilan Lainnya 1 (Upah Pungut / Honor)",
+          "bruto": 0,
+          "pajak_dipotong": 0,
+          "npwp_bendahara": ""
+        },
+        "penghasilan_4": {
+          "label": "Penghasilan Lainnya 2 (Honor Lintas OPD)",
+          "bruto": 0,
+          "pajak_dipotong": 0,
+          "npwp_bendahara": ""
+        }
+      }
+    },
+    {
+      "bulan": 6,
+      "nama_bulan": "Juni",
+      "metode_perhitungan": "TER_BULANAN",
+      "is_akhir_periode": false,
+      "komponen_penghasilan": {
+        "penghasilan_1": {
+          "label": "Gaji Plus Tunjangan Melekat",
+          "bruto": 7850000,
+          "pajak_dipotong": 117750,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_2": {
+          "label": "Tunjangan Tambahan Penghasilan (TPP)",
+          "bruto": 9500000,
+          "pajak_dipotong": 760000,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_3": {
+          "label": "Penghasilan Lainnya 1 (Upah Pungut / Honor)",
+          "bruto": 2500000,
+          "pajak_dipotong": 125000,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_4": {
+          "label": "Penghasilan Lainnya 2 (Honor Lintas OPD)",
+          "bruto": 0,
+          "pajak_dipotong": 0,
+          "npwp_bendahara": ""
+        }
+      }
+    },
+    {
+      "bulan": 7,
+      "nama_bulan": "Juli",
+      "metode_perhitungan": "TER_BULANAN",
+      "is_akhir_periode": false,
+      "komponen_penghasilan": {
+        "penghasilan_1": {
+          "label": "Gaji Plus Tunjangan Melekat",
+          "bruto": 7850000,
+          "pajak_dipotong": 117750,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_2": {
+          "label": "Tunjangan Tambahan Penghasilan (TPP)",
+          "bruto": 9500000,
+          "pajak_dipotong": 760000,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_3": {
+          "label": "Penghasilan Lainnya 1 (Upah Pungut / Honor)",
+          "bruto": 0,
+          "pajak_dipotong": 0,
+          "npwp_bendahara": ""
+        },
+        "penghasilan_4": {
+          "label": "Penghasilan Lainnya 2 (Honor Lintas OPD)",
+          "bruto": 0,
+          "pajak_dipotong": 0,
+          "npwp_bendahara": ""
+        }
+      }
+    },
+    {
+      "bulan": 8,
+      "nama_bulan": "Agustus",
+      "metode_perhitungan": "TER_BULANAN",
+      "is_akhir_periode": false,
+      "komponen_penghasilan": {
+        "penghasilan_1": {
+          "label": "Gaji Plus Tunjangan Melekat",
+          "bruto": 7850000,
+          "pajak_dipotong": 117750,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_2": {
+          "label": "Tunjangan Tambahan Penghasilan (TPP)",
+          "bruto": 9500000,
+          "pajak_dipotong": 760000,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_3": {
+          "label": "Penghasilan Lainnya 1 (Upah Pungut / Honor)",
+          "bruto": 0,
+          "pajak_dipotong": 0,
+          "npwp_bendahara": ""
+        },
+        "penghasilan_4": {
+          "label": "Penghasilan Lainnya 2 (Honor Lintas OPD)",
+          "bruto": 1500000,
+          "pajak_dipotong": 75000,
+          "npwp_bendahara": "009876543505000"
+        }
+      }
+    },
+    {
+      "bulan": 9,
+      "nama_bulan": "September",
+      "metode_perhitungan": "TER_BULANAN",
+      "is_akhir_periode": false,
+      "komponen_penghasilan": {
+        "penghasilan_1": {
+          "label": "Gaji Plus Tunjangan Melekat",
+          "bruto": 7850000,
+          "pajak_dipotong": 117750,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_2": {
+          "label": "Tunjangan Tambahan Penghasilan (TPP)",
+          "bruto": 9500000,
+          "pajak_dipotong": 760000,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_3": {
+          "label": "Penghasilan Lainnya 1 (Upah Pungut / Honor)",
+          "bruto": 2500000,
+          "pajak_dipotong": 125000,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_4": {
+          "label": "Penghasilan Lainnya 2 (Honor Lintas OPD)",
+          "bruto": 0,
+          "pajak_dipotong": 0,
+          "npwp_bendahara": ""
+        }
+      }
+    },
+    {
+      "bulan": 10,
+      "nama_bulan": "Oktober",
+      "metode_perhitungan": "TER_BULANAN",
+      "is_akhir_periode": false,
+      "komponen_penghasilan": {
+        "penghasilan_1": {
+          "label": "Gaji Plus Tunjangan Melekat",
+          "bruto": 7850000,
+          "pajak_dipotong": 117750,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_2": {
+          "label": "Tunjangan Tambahan Penghasilan (TPP)",
+          "bruto": 9500000,
+          "pajak_dipotong": 760000,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_3": {
+          "label": "Penghasilan Lainnya 1 (Upah Pungut / Honor)",
+          "bruto": 0,
+          "pajak_dipotong": 0,
+          "npwp_bendahara": ""
+        },
+        "penghasilan_4": {
+          "label": "Penghasilan Lainnya 2 (Honor Lintas OPD)",
+          "bruto": 0,
+          "pajak_dipotong": 0,
+          "npwp_bendahara": ""
+        }
+      }
+    },
+    {
+      "bulan": 11,
+      "nama_bulan": "November",
+      "metode_perhitungan": "TER_BULANAN",
+      "is_akhir_periode": false,
+      "komponen_penghasilan": {
+        "penghasilan_1": {
+          "label": "Gaji Plus Tunjangan Melekat",
+          "bruto": 7850000,
+          "pajak_dipotong": 117750,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_2": {
+          "label": "Tunjangan Tambahan Penghasilan (TPP)",
+          "bruto": 9500000,
+          "pajak_dipotong": 760000,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_3": {
+          "label": "Penghasilan Lainnya 1 (Upah Pungut / Honor)",
+          "bruto": 0,
+          "pajak_dipotong": 0,
+          "npwp_bendahara": ""
+        },
+        "penghasilan_4": {
+          "label": "Penghasilan Lainnya 2 (Honor Lintas OPD)",
+          "bruto": 1500000,
+          "pajak_dipotong": 75000,
+          "npwp_bendahara": "009876543505000"
+        }
+      }
+    },
+    {
+      "bulan": 12,
+      "nama_bulan": "Desember",
+      "metode_perhitungan": "AKHIR_PERIODE",
+      "is_akhir_periode": true,
+      "komponen_penghasilan": {
+        "penghasilan_1": {
+          "label": "Gaji Plus Tunjangan Melekat",
+          "bruto": 7850000,
+          "pajak_dipotong": 117750,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_2": {
+          "label": "Tunjangan Tambahan Penghasilan (TPP)",
+          "bruto": 9500000,
+          "pajak_dipotong": 760000,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_3": {
+          "label": "Penghasilan Lainnya 1 (Upah Pungut / Honor)",
+          "bruto": 2500000,
+          "pajak_dipotong": 125000,
+          "npwp_bendahara": "001234567505000"
+        },
+        "penghasilan_4": {
+          "label": "Penghasilan Lainnya 2 (Honor Lintas OPD)",
+          "bruto": 0,
+          "pajak_dipotong": 0,
+          "npwp_bendahara": ""
+        }
+      }
+    }
+  ]
+}
