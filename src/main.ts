@@ -608,18 +608,119 @@ function attachFaqListeners(): void {
     });
   });
 
-  // FAQ search filter
   const searchInput = document.getElementById('faq-search-input') as HTMLInputElement;
-  searchInput?.addEventListener('input', (e) => {
-    const query = (e.target as HTMLInputElement).value.toLowerCase().trim();
-    document.querySelectorAll('.faq-item').forEach(item => {
-      const searchData = (item as HTMLElement).dataset.search || '';
-      if (!query || searchData.includes(query)) {
-        (item as HTMLElement).classList.remove('hidden');
+  const btnClearSearch = document.getElementById('btn-clear-faq-search');
+  const countText = document.getElementById('faq-count-text');
+  const emptyState = document.getElementById('faq-empty-state');
+  const catFilterBtns = document.querySelectorAll('.faq-cat-filter');
+  const allItems = document.querySelectorAll('.faq-item');
+  const totalItems = allItems.length;
+
+  let activeCategory = 'all';
+
+  const applyFilters = () => {
+    const query = (searchInput?.value || '').toLowerCase().trim();
+    let visibleCount = 0;
+
+    if (btnClearSearch) {
+      if (query.length > 0) {
+        btnClearSearch.classList.remove('hidden');
       } else {
-        (item as HTMLElement).classList.add('hidden');
+        btnClearSearch.classList.add('hidden');
+      }
+    }
+
+    allItems.forEach(itemEl => {
+      const el = itemEl as HTMLElement;
+      const cat = el.dataset.kategori || '';
+      const searchData = el.dataset.search || '';
+
+      const matchCat = (activeCategory === 'all' || cat === activeCategory);
+      const matchQuery = (!query || searchData.includes(query));
+
+      if (matchCat && matchQuery) {
+        el.classList.remove('hidden');
+        visibleCount++;
+      } else {
+        el.classList.add('hidden');
       }
     });
+
+    if (countText) {
+      countText.textContent = `Menampilkan ${visibleCount} dari ${totalItems} pertanyaan`;
+    }
+
+    if (emptyState) {
+      if (visibleCount === 0) {
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+      }
+    }
+  };
+
+  // Category filter click
+  catFilterBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const target = e.currentTarget as HTMLElement;
+      activeCategory = target.dataset.filter || 'all';
+
+      // Update button styles
+      catFilterBtns.forEach(b => {
+        b.className = 'faq-cat-filter px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer border bg-white text-slate-600 hover:bg-slate-100 border-slate-200';
+      });
+      target.className = 'faq-cat-filter px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer border bg-emerald-700 text-white border-emerald-700 shadow-xs';
+
+      applyFilters();
+    });
+  });
+
+  // Search input
+  searchInput?.addEventListener('input', applyFilters);
+
+  // Clear search
+  btnClearSearch?.addEventListener('click', () => {
+    if (searchInput) {
+      searchInput.value = '';
+      applyFilters();
+      searchInput.focus();
+    }
+  });
+
+  // Expand / Collapse all
+  document.getElementById('btn-faq-expand-all')?.addEventListener('click', () => {
+    allItems.forEach(itemEl => {
+      if (!itemEl.classList.contains('hidden')) {
+        const content = itemEl.querySelector('.faq-content');
+        const icon = itemEl.querySelector('.faq-icon');
+        content?.classList.remove('hidden');
+        icon?.classList.add('rotate-180');
+      }
+    });
+  });
+
+  document.getElementById('btn-faq-collapse-all')?.addEventListener('click', () => {
+    allItems.forEach(itemEl => {
+      const content = itemEl.querySelector('.faq-content');
+      const icon = itemEl.querySelector('.faq-icon');
+      content?.classList.add('hidden');
+      icon?.classList.remove('rotate-180');
+    });
+  });
+
+  // Reset filter from empty state
+  document.getElementById('btn-reset-faq-filter')?.addEventListener('click', () => {
+    activeCategory = 'all';
+    if (searchInput) searchInput.value = '';
+    catFilterBtns.forEach(b => {
+      const filter = (b as HTMLElement).dataset.filter;
+      if (filter === 'all') {
+        b.className = 'faq-cat-filter px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer border bg-emerald-700 text-white border-emerald-700 shadow-xs';
+      } else {
+        b.className = 'faq-cat-filter px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer border bg-white text-slate-600 hover:bg-slate-100 border-slate-200';
+      }
+    });
+    applyFilters();
   });
 }
 
