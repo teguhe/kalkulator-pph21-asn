@@ -2,15 +2,17 @@ import { appState } from '../state/appState';
 import { authService } from '../services/authService';
 import { quotaService } from '../services/quotaService';
 import { logService } from '../services/logService';
-import { formatTimestampIndo } from '../utils/formatters';
+import { formatTimestampIndo, formatRupiah, formatNPWP } from '../utils/formatters';
 
 export function renderAdminView(): string {
   const { currentUser } = appState;
   const isAdmin = currentUser ? currentUser.isAdmin : false;
+  const firebaseConfig = authService.getFirebaseConfig();
+  const isFbConfigured = authService.isFirebaseConfigured();
 
   if (!isAdmin) {
     return `
-      <div class="max-w-2xl mx-auto py-8">
+      <div class="max-w-2xl mx-auto py-8 space-y-6">
         <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm text-center">
           <div class="w-16 h-16 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto mb-4 shadow-xs">
             <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -27,8 +29,8 @@ export function renderAdminView(): string {
               Anda saat ini masuk sebagai: <strong>${currentUser.email}</strong> (Bukan Administrator).
             </div>
           ` : `
-            <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl mb-6 text-xs text-blue-800">
-              Anda saat ini berada dalam mode Tamu (Belum Login).
+            <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl mb-6 text-xs text-rose-800">
+              Anda belum login. Semua pengguna wajib masuk menggunakan akun Google resmi terlebih dahulu.
             </div>
           `}
 
@@ -47,16 +49,63 @@ export function renderAdminView(): string {
             </p>
           </div>
         </div>
+
+        <!-- Form Konfigurasi Firebase API Langsung (Dapat diakses sebelum login admin) -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs text-left">
+          <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+              <svg class="w-5 h-5 text-orange-500" viewBox="0 0 24 24" fill="currentColor"><path d="M3.89 15.672L6.255.474A.5.5 0 0 1 7.15.28l3.49 6.55-6.75 8.842zm14.839 3.013l-1.89-11.758a.5.5 0 0 0-.87-.271L3.08 18.685l7.98 4.51a2 2 0 0 0 1.94 0l5.73-3.01zM13.63 8.358l-2.42-4.63a.5.5 0 0 0-.88 0l-7.79 14.86 11.09-10.23z"/></svg>
+              <h3 class="text-sm font-bold text-slate-900">Form Pengaturan Firebase & API Key</h3>
+            </div>
+            ${isFbConfigured 
+              ? '<span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">🟢 Terhubung</span>' 
+              : '<span class="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">🟠 Belum Terhubung</span>'}
+          </div>
+
+          <p class="text-xs text-slate-600 mb-4 leading-relaxed">
+            Untuk mengaktifkan login Google, masukkan kredensial Web App dari <strong>Firebase Console</strong> (menu <em>Project Settings &gt; General &gt; Your apps</em>). Data ini disimpan aman di browser lokal Anda.
+          </p>
+
+          <form id="form-firebase-config" class="space-y-3 text-xs">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Firebase API Key <span class="text-rose-500">*</span></label>
+              <input type="text" id="fb-api-key" value="${firebaseConfig?.apiKey || ''}" required placeholder="Contoh: AIzaSyD..." 
+                class="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono text-xs outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Auth Domain <span class="text-rose-500">*</span></label>
+                <input type="text" id="fb-auth-domain" value="${firebaseConfig?.authDomain || ''}" required placeholder="project-id.firebaseapp.com" 
+                  class="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono text-xs outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Project ID <span class="text-rose-500">*</span></label>
+                <input type="text" id="fb-project-id" value="${firebaseConfig?.projectId || ''}" required placeholder="project-id" 
+                  class="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono text-xs outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">App ID (Opsional)</label>
+              <input type="text" id="fb-app-id" value="${firebaseConfig?.appId || ''}" placeholder="1:123456789:web:abcdef" 
+                class="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono text-xs outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+            <button type="submit" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer mt-2">
+              Simpan Konfigurasi Firebase
+            </button>
+          </form>
+        </div>
       </div>
     `;
   }
 
-  // Admin Dashboard Content
+  // Admin Dashboard Content (Admin is logged in)
   const adminList = authService.getAdminList();
   const logs = logService.getLogs();
   const quota = quotaService.getQuotaState();
-  const firebaseConfig = authService.getFirebaseConfig();
+  const emailSummaries = logService.getProcessSummaryByEmail();
+  const nikSummaries = logService.getProcessSummaryByNIK();
 
+  // Admin list rows
   const adminRowsHtml = adminList.map(a => {
     return `
       <tr class="border-b border-slate-100 text-xs">
@@ -68,13 +117,69 @@ export function renderAdminView(): string {
         </td>
         <td class="py-2.5 px-3 text-right">
           ${!a.isSuperAdmin ? `
-            <button data-remove-admin="${a.email}" class="btn-remove-admin text-rose-600 hover:text-rose-800 font-semibold text-[11px]">Hapus</button>
+            <button data-remove-admin="${a.email}" class="btn-remove-admin text-rose-600 hover:text-rose-800 font-semibold text-[11px] cursor-pointer">Hapus</button>
           ` : '<span class="text-slate-400 text-[11px]">-</span>'}
         </td>
       </tr>
     `;
   }).join('');
 
+  // 1. Rekap Per Email Rows
+  const emailRecapRowsHtml = emailSummaries.map((s, idx) => {
+    const isAdminEmail = authService.checkIsAdmin(s.email);
+    const isSuper = authService.checkIsSuperAdmin(s.email);
+    const roleBadge = isSuper 
+      ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">Super Admin</span>'
+      : isAdminEmail 
+      ? '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">Admin</span>'
+      : '<span class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">Pegawai</span>';
+
+    return `
+      <tr class="border-b border-slate-100 text-xs hover:bg-slate-50 transition row-rekap-email" data-email-search="${s.email.toLowerCase()}">
+        <td class="py-2.5 px-3 text-center text-slate-400 font-mono text-[11px]">${idx + 1}</td>
+        <td class="py-2.5 px-3 font-medium text-slate-900">
+          <div class="flex items-center gap-2">
+            <span>${s.email}</span>
+            ${roleBadge}
+          </div>
+        </td>
+        <td class="py-2.5 px-3 text-center font-bold text-emerald-700 bg-emerald-50/50">${s.totalCalculations}x</td>
+        <td class="py-2.5 px-3 text-center text-slate-600 font-semibold">${s.totalActions} aksi</td>
+        <td class="py-2.5 px-3">
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+            ${s.uniqueNIKs.length} NIK Pegawai
+          </span>
+        </td>
+        <td class="py-2.5 px-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">${formatTimestampIndo(s.lastActive)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  // 2. Rekap Per NIK Rows
+  const nikRecapRowsHtml = nikSummaries.map((s, idx) => {
+    const emailsBadge = s.processedByEmails.map(em => 
+      `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-700 border border-slate-200 mr-1 mb-1">${em}</span>`
+    ).join('');
+
+    return `
+      <tr class="border-b border-slate-100 text-xs hover:bg-slate-50 transition row-rekap-nik" data-nik-search="${(s.nik + ' ' + s.nama + ' ' + s.nip + ' ' + s.instansi).toLowerCase()}">
+        <td class="py-2.5 px-3 text-center text-slate-400 font-mono text-[11px]">${idx + 1}</td>
+        <td class="py-2.5 px-3 font-mono font-bold text-slate-900 whitespace-nowrap">${formatNPWP(s.nik)}</td>
+        <td class="py-2.5 px-3">
+          <div class="font-bold text-slate-900">${s.nama}</div>
+          <div class="text-[10px] text-slate-500 font-mono">NIP: ${s.nip}</div>
+        </td>
+        <td class="py-2.5 px-3 text-slate-600 text-[11px]">${s.instansi}</td>
+        <td class="py-2.5 px-3 text-center font-bold text-indigo-700 bg-indigo-50/50">${s.totalCalculations}x</td>
+        <td class="py-2.5 px-3 text-right font-mono text-slate-800">${formatRupiah(s.lastTotalBruto)}</td>
+        <td class="py-2.5 px-3 text-right font-mono font-semibold text-emerald-700">${formatRupiah(s.lastTotalPajak)}</td>
+        <td class="py-2.5 px-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">${formatTimestampIndo(s.lastProcessedAt)}</td>
+        <td class="py-2.5 px-3 max-w-[200px]">${emailsBadge || '<span class="text-slate-400">-</span>'}</td>
+      </tr>
+    `;
+  }).join('');
+
+  // 3. Raw Log Rows
   const logRowsHtml = logs.slice(0, 50).map(l => {
     const badgeColor = l.type === 'CALCULATE' ? 'bg-blue-100 text-blue-800'
       : l.type === 'LOGIN' ? 'bg-emerald-100 text-emerald-800'
@@ -103,13 +208,13 @@ export function renderAdminView(): string {
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               Panel Kontrol Administrator
             </div>
-            <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white">Dashboard Admin & Manajemen Sistem</h2>
+            <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white">Dashboard Admin & Rekapitulasi Proses</h2>
             <p class="text-xs sm:text-sm text-slate-300">
               Login Aktif: <strong>${currentUser.email}</strong> (${currentUser.isSuperAdmin ? 'Super Administrator' : 'Administrator'})
             </p>
           </div>
           <div class="shrink-0 flex items-center gap-2">
-            <button id="btn-admin-export-csv" class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold border border-slate-700 transition">
+            <button id="btn-admin-export-csv" class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold border border-slate-700 transition cursor-pointer">
               <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
               <span>Download Log CSV</span>
             </button>
@@ -117,26 +222,116 @@ export function renderAdminView(): string {
         </div>
 
         <!-- Metric Stat Cards -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800">
-          <div class="bg-white/5 border border-white/10 rounded-xl p-3.5">
-            <div class="text-[11px] font-semibold text-slate-400 uppercase">Kuota Pengguna Hari Ini</div>
-            <div class="text-lg sm:text-xl font-bold text-white font-mono mt-1">${quota.isUnlimited ? 'Unlimited' : `${quota.remaining} tersisa`}</div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3.5 mt-6 pt-6 border-t border-slate-800">
+          <div class="bg-white/5 border border-white/10 rounded-xl p-3">
+            <div class="text-[10px] font-semibold text-slate-400 uppercase">Kuota Pengguna</div>
+            <div class="text-base sm:text-lg font-bold text-white font-mono mt-1">${quota.isUnlimited ? 'Unlimited' : `${quota.remaining} tersisa`}</div>
           </div>
-          <div class="bg-white/5 border border-white/10 rounded-xl p-3.5">
-            <div class="text-[11px] font-semibold text-slate-400 uppercase">Total Akun Admin</div>
-            <div class="text-lg sm:text-xl font-bold text-emerald-400 font-mono mt-1">${adminList.length} Akun</div>
+          <div class="bg-white/5 border border-white/10 rounded-xl p-3">
+            <div class="text-[10px] font-semibold text-slate-400 uppercase">Akun Pemroses</div>
+            <div class="text-base sm:text-lg font-bold text-emerald-400 font-mono mt-1">${emailSummaries.length} Email</div>
           </div>
-          <div class="bg-white/5 border border-white/10 rounded-xl p-3.5">
-            <div class="text-[11px] font-semibold text-slate-400 uppercase">Total Aktivitas Tercatat</div>
-            <div class="text-lg sm:text-xl font-bold text-blue-400 font-mono mt-1">${logs.length} Log</div>
+          <div class="bg-white/5 border border-white/10 rounded-xl p-3">
+            <div class="text-[10px] font-semibold text-slate-400 uppercase">Pegawai / NIK Diproses</div>
+            <div class="text-base sm:text-lg font-bold text-indigo-400 font-mono mt-1">${nikSummaries.length} NIK</div>
           </div>
-          <div class="bg-white/5 border border-white/10 rounded-xl p-3.5">
-            <div class="text-[11px] font-semibold text-slate-400 uppercase">Koneksi Backend</div>
-            <div class="text-lg sm:text-xl font-bold text-amber-400 font-mono mt-1">${firebaseConfig?.projectId ? 'Firebase' : 'Local Storage'}</div>
+          <div class="bg-white/5 border border-white/10 rounded-xl p-3">
+            <div class="text-[10px] font-semibold text-slate-400 uppercase">Total Akun Admin</div>
+            <div class="text-base sm:text-lg font-bold text-amber-400 font-mono mt-1">${adminList.length} Akun</div>
+          </div>
+          <div class="bg-white/5 border border-white/10 rounded-xl p-3">
+            <div class="text-[10px] font-semibold text-slate-400 uppercase">Total Aktivitas</div>
+            <div class="text-base sm:text-lg font-bold text-blue-400 font-mono mt-1">${logs.length} Log</div>
+          </div>
+          <div class="bg-white/5 border border-white/10 rounded-xl p-3">
+            <div class="text-[10px] font-semibold text-slate-400 uppercase">Koneksi Backend</div>
+            <div class="text-base sm:text-lg font-bold text-teal-400 font-mono mt-1">${firebaseConfig?.projectId ? 'Firebase' : 'Local Storage'}</div>
           </div>
         </div>
       </div>
 
+      <!-- BAGIAN 1: REKAPITULASI PROSES PER EMAIL PENGGUNA -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 mb-4 border-b border-slate-100">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Rekapitulasi Proses Berdasarkan Email Pengguna</h3>
+              <p class="text-xs text-slate-500">Mencatat aktivitas, jumlah perhitungan pajak, dan NIK pegawai yang diproses oleh setiap akun</p>
+            </div>
+          </div>
+          <div class="w-full sm:w-64">
+            <input type="text" id="input-search-rekap-email" placeholder="Cari email pengguna..." 
+              class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+        </div>
+
+        <div class="border border-slate-200 rounded-xl overflow-hidden shadow-xs overflow-x-auto">
+          <table class="w-full text-left min-w-[700px]">
+            <thead class="bg-slate-50 text-[10px] text-slate-500 uppercase border-b border-slate-200">
+              <tr>
+                <th class="py-2.5 px-3 text-center w-12">No</th>
+                <th class="py-2.5 px-3">Email Pengguna (Google)</th>
+                <th class="py-2.5 px-3 text-center">Hitung PPh 21</th>
+                <th class="py-2.5 px-3 text-center">Total Aksi</th>
+                <th class="py-2.5 px-3">Pegawai / NIK Diproses</th>
+                <th class="py-2.5 px-3">Aktivitas Terakhir</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-rekap-email" class="divide-y divide-slate-100">
+              ${emailRecapRowsHtml.length > 0 ? emailRecapRowsHtml : '<tr><td colspan="6" class="p-6 text-center text-xs text-slate-400">Belum ada aktivitas proses per email yang tercatat.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- BAGIAN 2: REKAPITULASI PROSES PER NIK PEGAWAI -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 mb-4 border-b border-slate-100">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center font-bold">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Rekapitulasi Proses Berdasarkan NIK Pegawai</h3>
+              <p class="text-xs text-slate-500">Mencatat data pegawai, frekuensi perhitungan PPh 21, nilai bruto &amp; pajak terakhir, serta akun pemroses</p>
+            </div>
+          </div>
+          <div class="w-full sm:w-72">
+            <input type="text" id="input-search-rekap-nik" placeholder="Cari NIK, Nama, atau Instansi..." 
+              class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+        </div>
+
+        <div class="border border-slate-200 rounded-xl overflow-hidden shadow-xs overflow-x-auto">
+          <table class="w-full text-left min-w-[900px]">
+            <thead class="bg-slate-50 text-[10px] text-slate-500 uppercase border-b border-slate-200">
+              <tr>
+                <th class="py-2.5 px-3 text-center w-12">No</th>
+                <th class="py-2.5 px-3">NIK Pegawai</th>
+                <th class="py-2.5 px-3">Nama Pegawai &amp; NIP</th>
+                <th class="py-2.5 px-3">Instansi</th>
+                <th class="py-2.5 px-3 text-center">Frekuensi</th>
+                <th class="py-2.5 px-3 text-right">Bruto Terakhir</th>
+                <th class="py-2.5 px-3 text-right">PPh 21 Terutang</th>
+                <th class="py-2.5 px-3">Terakhir Diproses</th>
+                <th class="py-2.5 px-3">Diproses Oleh</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-rekap-nik" class="divide-y divide-slate-100">
+              ${nikRecapRowsHtml.length > 0 ? nikRecapRowsHtml : '<tr><td colspan="9" class="p-6 text-center text-xs text-slate-400">Belum ada pegawai (NIK) yang diproses perhitungannya.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- BAGIAN 3: MANAJEMEN SISTEM & LOG AKTIVITAS -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Left: Manajemen Admin & Kuota (1 col) -->
         <div class="space-y-6">
@@ -151,7 +346,7 @@ export function renderAdminView(): string {
             <form id="form-add-admin" class="flex gap-2 mb-4">
               <input type="email" id="input-new-admin-email" placeholder="admin.baru@gmail.com" required 
                 class="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500" />
-              <button type="submit" class="px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition shrink-0">
+              <button type="submit" class="px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition shrink-0 cursor-pointer">
                 Tambah
               </button>
             </form>
@@ -181,15 +376,15 @@ export function renderAdminView(): string {
             </div>
 
             <p class="text-xs text-slate-600 mb-4 leading-relaxed">
-              Aturan Kuota: Tamu = 3x/hari | Login Google = 25x/hari | Admin = Unlimited.
+              Aturan Kuota: Semua pengguna wajib login Google (25x/hari) | Admin = Unlimited. Mode tamu dinonaktifkan.
             </p>
 
             <div class="space-y-2">
-              <button id="btn-admin-reset-quota-today" class="w-full text-left px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 transition flex items-center justify-between">
+              <button id="btn-admin-reset-quota-today" class="w-full text-left px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 transition flex items-center justify-between cursor-pointer">
                 <span>Reset Kuota Hari Ini (Akun Ini)</span>
                 <span class="text-emerald-600">&circlearrowright;</span>
               </button>
-              <button id="btn-admin-reset-all-quotas" class="w-full text-left px-3 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-semibold text-rose-700 transition flex items-center justify-between">
+              <button id="btn-admin-reset-all-quotas" class="w-full text-left px-3 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-semibold text-rose-700 transition flex items-center justify-between cursor-pointer">
                 <span>Reset Seluruh Kuota Sistem</span>
                 <span>&times;</span>
               </button>
@@ -203,35 +398,35 @@ export function renderAdminView(): string {
                 <svg class="w-5 h-5 text-orange-500" viewBox="0 0 24 24" fill="currentColor"><path d="M3.89 15.672L6.255.474A.5.5 0 0 1 7.15.28l3.49 6.55-6.75 8.842zm14.839 3.013l-1.89-11.758a.5.5 0 0 0-.87-.271L3.08 18.685l7.98 4.51a2 2 0 0 0 1.94 0l5.73-3.01zM13.63 8.358l-2.42-4.63a.5.5 0 0 0-.88 0l-7.79 14.86 11.09-10.23z"/></svg>
                 <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Konfigurasi Firebase</h3>
               </div>
-              ${authService.isFirebaseConfigured() 
+              ${isFbConfigured 
                 ? '<span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">🟢 Terhubung</span>' 
                 : '<span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">🟠 Belum Terhubung</span>'}
             </div>
 
             <p class="text-[11px] text-slate-500 mb-3">
-              Kredensial Firebase project untuk mengaktifkan Google Sign-In & pencatatan live. Kredensial ini disimpan aman di browser lokal Anda.
+              Kredensial Firebase project untuk mengaktifkan Google Sign-In &amp; pencatatan live. Kredensial ini disimpan aman di browser lokal Anda.
             </p>
 
             <form id="form-firebase-config" class="space-y-2.5 text-xs">
               <div>
                 <label class="block text-[10px] font-semibold text-slate-600 mb-0.5">Firebase API Key</label>
                 <input type="text" id="fb-api-key" value="${firebaseConfig?.apiKey || ''}" required placeholder="AIzaSy..." 
-                  class="w-full px-2.5 py-1.5 border border-slate-300 rounded font-mono text-xs outline-none" />
+                  class="w-full px-2.5 py-1.5 border border-slate-300 rounded font-mono text-xs outline-none focus:ring-2 focus:ring-emerald-500" />
               </div>
               <div>
                 <label class="block text-[10px] font-semibold text-slate-600 mb-0.5">Auth Domain</label>
                 <input type="text" id="fb-auth-domain" value="${firebaseConfig?.authDomain || ''}" required placeholder="project-id.firebaseapp.com" 
-                  class="w-full px-2.5 py-1.5 border border-slate-300 rounded font-mono text-xs outline-none" />
+                  class="w-full px-2.5 py-1.5 border border-slate-300 rounded font-mono text-xs outline-none focus:ring-2 focus:ring-emerald-500" />
               </div>
               <div>
                 <label class="block text-[10px] font-semibold text-slate-600 mb-0.5">Project ID</label>
                 <input type="text" id="fb-project-id" value="${firebaseConfig?.projectId || ''}" required placeholder="project-id" 
-                  class="w-full px-2.5 py-1.5 border border-slate-300 rounded font-mono text-xs outline-none" />
+                  class="w-full px-2.5 py-1.5 border border-slate-300 rounded font-mono text-xs outline-none focus:ring-2 focus:ring-emerald-500" />
               </div>
               <div>
                 <label class="block text-[10px] font-semibold text-slate-600 mb-0.5">App ID (Opsional)</label>
                 <input type="text" id="fb-app-id" value="${firebaseConfig?.appId || ''}" placeholder="1:123456789:web:abcdef" 
-                  class="w-full px-2.5 py-1.5 border border-slate-300 rounded font-mono text-xs outline-none" />
+                  class="w-full px-2.5 py-1.5 border border-slate-300 rounded font-mono text-xs outline-none focus:ring-2 focus:ring-emerald-500" />
               </div>
               <button type="submit" class="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold transition mt-2 cursor-pointer">
                 Simpan Konfigurasi Firebase
@@ -245,20 +440,20 @@ export function renderAdminView(): string {
           <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 mb-4 border-b border-slate-100">
               <div>
-                <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Catatan Log Aktivitas Sistem</h3>
+                <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Catatan Log Aktivitas Sistem Lengkap</h3>
                 <p class="text-xs text-slate-500">Mencatat riwayat login, proses perhitungan pajak, serta impor/ekspor data</p>
               </div>
 
               <!-- Filter controls -->
               <div class="flex items-center gap-2">
-                <select id="select-log-filter" class="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white outline-none">
+                <select id="select-log-filter" class="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white outline-none cursor-pointer">
                   <option value="ALL">Semua Tipe Log</option>
                   <option value="CALCULATE">Perhitungan Pajak</option>
                   <option value="LOGIN">Login Akun</option>
                   <option value="IMPORT">Impor Data</option>
                   <option value="EXPORT">Ekspor Data</option>
                 </select>
-                <button id="btn-admin-clear-logs" class="px-2.5 py-1.5 text-xs text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition font-medium">
+                <button id="btn-admin-clear-logs" class="px-2.5 py-1.5 text-xs text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition font-medium cursor-pointer">
                   Hapus Log
                 </button>
               </div>

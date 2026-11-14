@@ -48,11 +48,16 @@ export function renderNavigation(): string {
       ? '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse ml-0.5"></span>' 
       : '';
 
+    const lockBadge = (!currentUser && tab.id !== 'faq')
+      ? '<span class="text-[10px] text-slate-400 opacity-80" title="Wajib login Google">🔒</span>'
+      : '';
+
     return `
       <button data-tab="${tab.id}" class="tab-button ${baseClasses} ${activeClasses}">
         ${tab.icon}
         <span>${tab.label}</span>
         ${adminBadge}
+        ${lockBadge}
       </button>
     `;
   }).join('');

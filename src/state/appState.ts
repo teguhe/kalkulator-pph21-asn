@@ -283,19 +283,33 @@ class AppState {
   // Tax calculation with Quota checks
   public recalculateTax(consumeQuotaCount: boolean = false): boolean {
     if (consumeQuotaCount) {
+      if (!this.currentUser) {
+        this.showToast('warning', 'Wajib Login', 'Silakan masuk dengan Akun Google terlebih dahulu untuk melakukan perhitungan.');
+        document.getElementById('modal-login')?.classList.remove('hidden');
+        return false;
+      }
+
       if (!quotaService.canCalculate()) {
-        this.showToast('error', 'Batas Kuota Tercapai', 'Kuota perhitungan Anda hari ini telah habis. Silakan login dengan Google atau hubungi admin.');
+        this.showToast('error', 'Batas Kuota Tercapai', 'Kuota perhitungan Anda hari ini telah habis (25x per hari).');
         return false;
       }
       quotaService.consumeQuota();
       this.quotaState = quotaService.getQuotaState();
 
       // Record calculation log
+      const nama = this.dataset.pegawai.nama || 'Tanpa Nama';
+      const nik = this.dataset.pegawai.nik || '-';
+      const nip = this.dataset.pegawai.nip || '-';
+      const instansi = this.dataset.pegawai.instansi?.nama_instansi || '-';
+
       logService.recordLog(
         'CALCULATE',
-        `Perhitungan PPh 21: ${this.dataset.pegawai.nama || 'Tanpa Nama'} (${this.dataset.pegawai.status_ptkp})`,
+        `Perhitungan PPh 21: ${nama} (NIK: ${nik})`,
         {
-          nama: this.dataset.pegawai.nama,
+          nama,
+          nik,
+          nip,
+          instansi,
           status_ptkp: this.dataset.pegawai.status_ptkp,
           total_bruto: this.calculation.total_bruto_setahun,
           total_pajak: this.calculation.total_pph21_terutang_setahun
@@ -309,16 +323,33 @@ class AppState {
 
   // Load Template Dummy
   public loadDummyTemplate(): void {
+    if (!this.currentUser) {
+      this.showToast('warning', 'Wajib Login', 'Silakan masuk dengan Akun Google terlebih dahulu untuk memuat template dummy.');
+      document.getElementById('modal-login')?.classList.remove('hidden');
+      return;
+    }
+
     this.dataset = getSampleDummyDataset();
     this.recalculateTax(false);
     this.saveDatasetToStorage();
-    logService.recordLog('IMPORT', 'Memuat data template dummy bawaan ASN/PNS (sample_data_pph21.json)');
+    logService.recordLog('IMPORT', `Memuat data template dummy bawaan ASN/PNS: ${this.dataset.pegawai.nama} (NIK: ${this.dataset.pegawai.nik || '-'})`, {
+      nama: this.dataset.pegawai.nama,
+      nik: this.dataset.pegawai.nik,
+      nip: this.dataset.pegawai.nip,
+      instansi: this.dataset.pegawai.instansi?.nama_instansi
+    });
     this.showToast('success', 'Template Dummy Dimuat', 'Data ASN/PNS contoh (Budi Santoso, S.Kom., M.T.) berhasil dimuat lengkap dengan 12 bulan penghasilan.');
     this.notify();
   }
 
   // Reset to empty
   public resetToEmpty(): void {
+    if (!this.currentUser) {
+      this.showToast('warning', 'Wajib Login', 'Silakan masuk dengan Akun Google terlebih dahulu.');
+      document.getElementById('modal-login')?.classList.remove('hidden');
+      return;
+    }
+
     this.dataset = createEmptyDataset();
     this.recalculateTax(false);
     this.saveDatasetToStorage();
@@ -328,10 +359,21 @@ class AppState {
 
   // Load from parsed & validated JSON
   public loadImportedDataset(dataset: PPh21Dataset): void {
+    if (!this.currentUser) {
+      this.showToast('warning', 'Wajib Login', 'Silakan masuk dengan Akun Google terlebih dahulu.');
+      document.getElementById('modal-login')?.classList.remove('hidden');
+      return;
+    }
+
     this.dataset = dataset;
     this.recalculateTax(false);
     this.saveDatasetToStorage();
-    logService.recordLog('IMPORT', `Mengimpor file JSON data pegawai: ${dataset.pegawai.nama}`);
+    logService.recordLog('IMPORT', `Mengimpor file JSON data pegawai: ${dataset.pegawai.nama} (NIK: ${dataset.pegawai.nik || '-'})`, {
+      nama: dataset.pegawai.nama,
+      nik: dataset.pegawai.nik,
+      nip: dataset.pegawai.nip,
+      instansi: dataset.pegawai.instansi?.nama_instansi
+    });
     this.showToast('success', 'Impor Sukses', `Data PPh 21 untuk ${dataset.pegawai.nama} berhasil dimuat.`);
     this.notify();
   }

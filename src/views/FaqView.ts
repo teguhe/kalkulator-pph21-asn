@@ -104,9 +104,9 @@ export function renderFaqView(): string {
         <div>
           <h4 class="font-bold text-slate-900 mb-1">1. Kuota Perhitungan:</h4>
           <ul class="list-disc pl-5 space-y-1 text-slate-700">
-            <li><strong>Tamu (Tanpa Login):</strong> Diberikan kuota 3x perhitungan per hari.</li>
-            <li><strong>Login Google:</strong> Diberikan kuota 25x perhitungan per hari secara cuma-cuma.</li>
-            <li><strong>Admin:</strong> Memiliki kuota tanpa batas (Unlimited).</li>
+            <li><strong>Wajib Login Google:</strong> Seluruh pengguna wajib masuk menggunakan Akun Google resmi (mode tamu dinonaktifkan).</li>
+            <li><strong>Pengguna Terverifikasi:</strong> Diberikan kuota 25x perhitungan per hari secara cuma-cuma.</li>
+            <li><strong>Administrator:</strong> Memiliki kuota tanpa batas (Unlimited) serta akses ke Dashboard Admin.</li>
           </ul>
         </div>
         <div class="pt-2">

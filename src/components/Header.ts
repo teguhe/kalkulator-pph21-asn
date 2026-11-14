@@ -6,7 +6,19 @@ export function renderHeader(): string {
   const { currentUser, quotaState } = appState;
 
   let quotaBadgeHtml = '';
-  if (quotaState.isUnlimited) {
+  if (!currentUser) {
+    quotaBadgeHtml = `
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 shadow-xs" title="Semua pengguna wajib login dengan akun Google">
+          <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+          Wajib Login Google
+        </span>
+        <button id="btn-header-login-prompt" class="text-xs text-emerald-700 hover:text-emerald-900 font-bold underline cursor-pointer">
+          Masuk
+        </button>
+      </div>
+    `;
+  } else if (quotaState.isUnlimited) {
     quotaBadgeHtml = `
       <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-xs" title="Super Admin / Admin Akses Tanpa Batas">
         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -14,24 +26,16 @@ export function renderHeader(): string {
       </span>
     `;
   } else {
-    const isGuest = !currentUser;
     const badgeColor = quotaState.remaining > 0 
       ? 'bg-blue-50 text-blue-700 border-blue-200' 
       : 'bg-rose-50 text-rose-700 border-rose-200';
     quotaBadgeHtml = `
-      <div class="flex items-center gap-2">
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${badgeColor} border shadow-xs" title="Sisa perhitungan harian">
-          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Kuota: ${quotaState.remaining} / ${quotaState.limit} ${isGuest ? '(Tamu)' : ''}
-        </span>
-        ${isGuest ? `
-          <button id="btn-header-login-prompt" class="text-xs text-blue-600 hover:text-blue-800 font-medium underline">
-            Login Google (+25x)
-          </button>
-        ` : ''}
-      </div>
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${badgeColor} border shadow-xs" title="Sisa perhitungan harian">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Kuota: ${quotaState.remaining} / ${quotaState.limit}
+      </span>
     `;
   }
 

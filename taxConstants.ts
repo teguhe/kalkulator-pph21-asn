@@ -31,7 +31,7 @@ export const SUPER_ADMIN_EMAILS: readonly string[] = [
 ];
 
 export const QUOTA_CONFIG = {
-  GUEST_DAILY_LIMIT: 3,
+  GUEST_DAILY_LIMIT: 0, // Mode Tamu dinonaktifkan: semua user wajib login
   USER_DAILY_LIMIT: 25,
   ADMIN_DAILY_LIMIT: Infinity,
 };

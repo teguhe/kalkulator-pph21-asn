@@ -15,16 +15,27 @@ class QuotaService {
 
   private getUserKey(): string {
     const user = authService.getCurrentUser();
-    return user ? `user_${user.email}` : 'guest';
+    return user ? `user_${user.email}` : 'unauthenticated';
   }
 
   public getQuotaState(): QuotaState {
     const today = this.getTodayKey();
+    const user = authService.getCurrentUser();
+
+    // Mode Tamu dihapus: jika belum login, kuota 0
+    if (!user) {
+      return {
+        todayKey: today,
+        usedToday: 0,
+        limit: 0,
+        remaining: 0,
+        isUnlimited: false
+      };
+    }
+
     const userKey = this.getUserKey();
     const storageKey = `${QUOTA_STORAGE_PREFIX}${today}_${userKey}`;
-
-    const user = authService.getCurrentUser();
-    const isAdmin = user ? (user.isAdmin || user.isSuperAdmin) : false;
+    const isAdmin = user.isAdmin || user.isSuperAdmin;
 
     if (isAdmin) {
       return {
@@ -36,7 +47,7 @@ class QuotaService {
       };
     }
 
-    const limit = user ? QUOTA_CONFIG.USER_DAILY_LIMIT : QUOTA_CONFIG.GUEST_DAILY_LIMIT;
+    const limit = QUOTA_CONFIG.USER_DAILY_LIMIT;
     const used = this.getRawUsage(storageKey);
     const remaining = Math.max(0, limit - used);
 
@@ -59,6 +70,8 @@ class QuotaService {
   }
 
   public canCalculate(): boolean {
+    const user = authService.getCurrentUser();
+    if (!user) return false; // Wajib login!
     const state = this.getQuotaState();
     return state.isUnlimited || state.remaining > 0;
   }

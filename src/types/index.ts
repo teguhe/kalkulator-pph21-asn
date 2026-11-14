@@ -159,3 +159,23 @@ export interface QuotaState {
   remaining: number;
   isUnlimited: boolean;
 }
+
+export interface EmailProcessSummary {
+  email: string;
+  totalCalculations: number;
+  totalActions: number;
+  uniqueNIKs: string[];
+  lastActive: string;
+}
+
+export interface NIKProcessSummary {
+  nik: string;
+  nama: string;
+  nip: string;
+  instansi: string;
+  totalCalculations: number;
+  lastTotalBruto: number;
+  lastTotalPajak: number;
+  lastProcessedAt: string;
+  processedByEmails: string[];
+}
