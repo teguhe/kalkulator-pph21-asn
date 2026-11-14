@@ -18,15 +18,23 @@ export function renderPegawaiView(): string {
     <div class="space-y-6">
       <!-- Title & Context Card -->
       <div class="bg-linear-to-r from-emerald-800 via-teal-800 to-slate-900 rounded-2xl p-6 text-white shadow-md relative overflow-hidden">
-        <div class="relative z-10 max-w-3xl">
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold mb-3">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            Profil Wajib Pajak & Pengaturan Instansi
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+          <div class="max-w-2xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold mb-3">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Profil Wajib Pajak & Pengaturan Instansi
+            </div>
+            <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white mb-2">Data Pegawai ASN & Parameter Pemotongan</h2>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              Data identitas ini digunakan untuk menentukan kategori TER bulanan (A, B, atau C), batasan PTKP saat rekonsiliasi akhir periode/Desember, serta identitas resmi pemotong pada formulir bukti potong <strong>1721-BPA2</strong>.
+            </p>
           </div>
-          <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white mb-2">Data Pegawai ASN & Parameter Pemotongan</h2>
-          <p class="text-sm text-slate-300 leading-relaxed">
-            Data identitas ini digunakan untuk menentukan kategori TER bulanan (A, B, atau C), batasan PTKP saat rekonsiliasi akhir periode/Desember, serta identitas resmi pemotong pada formulir bukti potong <strong>1721-BPA2</strong>.
-          </p>
+          <div class="shrink-0 flex items-center">
+            <button id="btn-load-dummy" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-emerald-400 hover:bg-emerald-300 active:bg-emerald-500 text-slate-950 shadow-md transition-all cursor-pointer" title="Muat Data Sampel Dummy ASN">
+              <svg class="w-4 h-4 shrink-0 text-slate-950" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+              <span>Muat Template Dummy ASN</span>
+            </button>
+          </div>
         </div>
         <div class="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
           <svg class="w-72 h-72 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>

@@ -246,8 +246,6 @@ function attachEventListeners(): void {
   // Pusat Bantuan & FAQ Event Listeners
   const handleOpenFaq = () => appState.setActiveTab('faq');
   document.getElementById('btn-header-faq')?.addEventListener('click', handleOpenFaq);
-  document.getElementById('btn-header-faq-loggedin')?.addEventListener('click', handleOpenFaq);
-  document.getElementById('btn-header-faq-mobile')?.addEventListener('click', handleOpenFaq);
   document.getElementById('btn-menu-faq')?.addEventListener('click', handleOpenFaq);
   document.getElementById('btn-footer-faq')?.addEventListener('click', handleOpenFaq);
 
@@ -258,12 +256,9 @@ function attachEventListeners(): void {
     btn.addEventListener('click', handleBackToCalc);
   });
 
-  // Header Actions
+  // Action Muat Template Dummy (Di halaman Data Pegawai & Instansi)
   const btnLoadDummy = document.getElementById('btn-load-dummy');
-  const btnLoadDummyMobile = document.getElementById('btn-load-dummy-mobile');
-  const handleLoadDummy = () => appState.loadDummyTemplate();
-  btnLoadDummy?.addEventListener('click', handleLoadDummy);
-  btnLoadDummyMobile?.addEventListener('click', handleLoadDummy);
+  btnLoadDummy?.addEventListener('click', () => appState.loadDummyTemplate());
 
   const btnExport = document.getElementById('btn-export-json');
   const btnExportMobile = document.getElementById('btn-export-json-mobile');
