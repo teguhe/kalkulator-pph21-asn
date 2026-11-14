@@ -156,11 +156,17 @@ export function renderFaqView(): string {
     <div class="space-y-6 max-w-4xl mx-auto">
       <!-- Header Banner -->
       <div class="bg-linear-to-r from-teal-800 to-emerald-900 rounded-2xl p-6 text-white shadow-sm">
-        <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold mb-3 w-fit">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          Pusat Bantuan & Tanya Jawab (FAQ)
+        <div class="flex items-center justify-between gap-4 mb-3">
+          <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold w-fit">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            Pusat Bantuan &amp; Tanya Jawab (FAQ)
+          </div>
+          <button class="btn-back-to-calc inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold border border-white/20 transition cursor-pointer">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            <span>Kembali ke Kalkulator</span>
+          </button>
         </div>
-        <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white mb-2">Panduan Perpajakan PPh 21 & Penggunaan Aplikasi</h2>
+        <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white mb-2">Panduan Perpajakan PPh 21 &amp; Penggunaan Aplikasi</h2>
         <p class="text-xs sm:text-sm text-emerald-100">
           Temukan jawaban atas pertanyaan umum seputar regulasi PP 58/2023, PMK 168/2023, skema TER bulanan, rekonsiliasi akhir tahun, bukti potong BPA2, dan tata cara penggunaan aplikasi.
         </p>

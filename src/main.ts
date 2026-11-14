@@ -99,8 +99,12 @@ function renderApp(): void {
           <div>
             <strong>Kalkulator PPh 21 & Generator BPA2 ASN</strong> &copy; ${new Date().getFullYear()} Teguh Prasetyo, M.Si.
           </div>
-          <div class="flex items-center gap-4 text-slate-600">
-            <span>PP 58/2023 & PMK 168/2023</span>
+          <div class="flex items-center gap-3 text-slate-600">
+            <button id="btn-footer-faq" class="text-emerald-700 hover:text-emerald-800 font-semibold transition cursor-pointer hover:underline">
+              Pusat Bantuan &amp; FAQ
+            </button>
+            <span>&bull;</span>
+            <span>PP 58/2023 &amp; PMK 168/2023</span>
             <span>&bull;</span>
             <span>Formulir 1721-BPA2</span>
           </div>
@@ -239,14 +243,19 @@ function attachEventListeners(): void {
     handleGoogleSignIn(btnGateGoogle);
   });
 
-  const btnHeaderFaq = document.getElementById('btn-header-faq');
-  btnHeaderFaq?.addEventListener('click', () => {
-    appState.setActiveTab('faq');
-  });
+  // Pusat Bantuan & FAQ Event Listeners
+  const handleOpenFaq = () => appState.setActiveTab('faq');
+  document.getElementById('btn-header-faq')?.addEventListener('click', handleOpenFaq);
+  document.getElementById('btn-header-faq-loggedin')?.addEventListener('click', handleOpenFaq);
+  document.getElementById('btn-header-faq-mobile')?.addEventListener('click', handleOpenFaq);
+  document.getElementById('btn-menu-faq')?.addEventListener('click', handleOpenFaq);
+  document.getElementById('btn-footer-faq')?.addEventListener('click', handleOpenFaq);
 
-  const btnHeaderLogo = document.getElementById('btn-header-logo-home');
-  btnHeaderLogo?.addEventListener('click', () => {
-    appState.setActiveTab('pegawai');
+  // Navigasi Kembali ke Kalkulator (Langkah 1: Data Pegawai)
+  const handleBackToCalc = () => appState.setActiveTab('pegawai');
+  document.getElementById('btn-header-logo-home')?.addEventListener('click', handleBackToCalc);
+  document.querySelectorAll('.btn-back-to-calc').forEach(btn => {
+    btn.addEventListener('click', handleBackToCalc);
   });
 
   // Header Actions

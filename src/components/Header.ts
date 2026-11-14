@@ -57,6 +57,12 @@ export function renderHeader(): string {
               Dashboard Admin
             </button>
           ` : ''}
+          <button id="btn-menu-faq" class="w-full text-left px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-lg flex items-center gap-2 cursor-pointer">
+            <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Pusat Bantuan &amp; FAQ
+          </button>
           <button id="btn-header-signout" class="w-full text-left px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg flex items-center gap-2 cursor-pointer">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
             Keluar (Sign Out)
@@ -177,6 +183,12 @@ export function renderHeader(): string {
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 <span>Reset</span>
               </button>
+              <button id="btn-header-faq-loggedin" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold ${appState.activeTab === 'faq' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'} transition-colors cursor-pointer" title="Pusat Bantuan & FAQ Perpajakan ASN">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Bantuan &amp; FAQ</span>
+              </button>
             </div>
 
             <!-- Auth profile / login -->
@@ -192,6 +204,7 @@ export function renderHeader(): string {
           <button id="btn-import-json-mobile" class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded border border-slate-200 shrink-0 cursor-pointer">Impor</button>
           <button id="btn-export-json-mobile" class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded border border-slate-200 shrink-0 cursor-pointer">Ekspor</button>
           <button id="btn-reset-data-mobile" class="px-2.5 py-1 bg-rose-50 text-rose-700 rounded border border-rose-200 shrink-0 cursor-pointer">Reset</button>
+          <button id="btn-header-faq-mobile" class="px-2.5 py-1 ${appState.activeTab === 'faq' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold' : 'bg-slate-100 text-slate-700 border border-slate-200'} rounded shrink-0 cursor-pointer">Bantuan</button>
         </div>
       </div>
     </header>
