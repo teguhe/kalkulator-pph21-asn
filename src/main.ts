@@ -256,29 +256,21 @@ function attachEventListeners(): void {
     btn.addEventListener('click', handleBackToCalc);
   });
 
-  // Action Muat Template Dummy (Di halaman Data Pegawai & Instansi)
+  // Actions Manajemen Data (Di Halaman Data Pegawai & Instansi)
   const btnLoadDummy = document.getElementById('btn-load-dummy');
   btnLoadDummy?.addEventListener('click', () => appState.loadDummyTemplate());
 
   const btnExport = document.getElementById('btn-export-json');
-  const btnExportMobile = document.getElementById('btn-export-json-mobile');
-  const handleExport = () => exportDatasetJSON();
-  btnExport?.addEventListener('click', handleExport);
-  btnExportMobile?.addEventListener('click', handleExport);
+  btnExport?.addEventListener('click', () => exportDatasetJSON());
 
   const fileInput = document.getElementById('json-file-input') as HTMLInputElement;
   const btnImport = document.getElementById('btn-import-json');
-  const btnImportMobile = document.getElementById('btn-import-json-mobile');
-  const triggerImport = () => fileInput?.click();
-  btnImport?.addEventListener('click', triggerImport);
-  btnImportMobile?.addEventListener('click', triggerImport);
-
+  btnImport?.addEventListener('click', () => fileInput?.click());
   fileInput?.addEventListener('change', handleFileImport);
 
   // Reset Modal
   const modalReset = document.getElementById('modal-reset');
   const btnReset = document.getElementById('btn-reset-data');
-  const btnResetMobile = document.getElementById('btn-reset-data-mobile');
   const btnCancelReset = document.getElementById('btn-cancel-reset');
   const btnConfirmReset = document.getElementById('btn-confirm-reset');
 
@@ -286,7 +278,6 @@ function attachEventListeners(): void {
   const closeReset = () => modalReset?.classList.add('hidden');
 
   btnReset?.addEventListener('click', openReset);
-  btnResetMobile?.addEventListener('click', openReset);
   btnCancelReset?.addEventListener('click', closeReset);
   btnConfirmReset?.addEventListener('click', () => {
     closeReset();

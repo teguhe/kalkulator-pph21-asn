@@ -161,38 +161,15 @@ export function renderHeader(): string {
           </button>
 
           <!-- Action Buttons & User Info -->
-          <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div class="flex items-center gap-3 shrink-0">
             <!-- Quota badge -->
             ${quotaBadgeHtml}
 
-            <!-- Toolbar buttons -->
-            <div class="hidden lg:flex items-center gap-1.5 border-l border-slate-200 pl-3">
-              <button id="btn-import-json" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-100 border border-slate-300 transition-colors cursor-pointer" title="Impor Data JSON">
-                <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-                <span>Impor</span>
-              </button>
-              <button id="btn-export-json" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-100 border border-slate-300 transition-colors cursor-pointer" title="Ekspor Data JSON">
-                <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                <span>Ekspor</span>
-              </button>
-              <button id="btn-reset-data" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors cursor-pointer" title="Reset ke Data Kosong">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                <span>Reset</span>
-              </button>
-            </div>
-
             <!-- Auth profile / login -->
-            <div class="border-l border-slate-200 pl-3">
+            <div>
               ${authSectionHtml}
             </div>
           </div>
-        </div>
-
-        <!-- Mobile Action Toolbar (Hanya ketika sudah login) -->
-        <div class="lg:hidden flex items-center justify-between py-2 border-t border-slate-100 gap-1 overflow-x-auto text-xs">
-          <button id="btn-import-json-mobile" class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded border border-slate-200 shrink-0 cursor-pointer">Impor</button>
-          <button id="btn-export-json-mobile" class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded border border-slate-200 shrink-0 cursor-pointer">Ekspor</button>
-          <button id="btn-reset-data-mobile" class="px-2.5 py-1 bg-rose-50 text-rose-700 rounded border border-rose-200 shrink-0 cursor-pointer">Reset</button>
         </div>
       </div>
     </header>
