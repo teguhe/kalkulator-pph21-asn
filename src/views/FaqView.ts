@@ -48,9 +48,9 @@ export function renderFaqView(): string {
     {
       id: 'faq-3',
       kategori: 'Akhir Periode & Rekonsiliasi',
-      tanya: 'Mengapa sering terjadi Kurang Bayar yang besar pada bulan Desember bagi ASN/PNS?',
+      tanya: 'Mengapa sering terjadi Kurang Bayar yang besar pada bulan Desember bagi ASN?',
       jawab: `
-        <p>Banyak pegawai ASN/PNS terkejut ketika potongan pajak di bulan Desember jauh lebih besar daripada bulan-bulan sebelumnya. Ini terjadi karena 2 faktor utama:</p>
+        <p>Banyak pegawai ASN terkejut ketika potongan pajak di bulan Desember jauh lebih besar daripada bulan-bulan sebelumnya. Ini terjadi karena 2 faktor utama:</p>
         <ol class="list-decimal pl-5 space-y-2 text-slate-700 my-2">
           <li><strong>Rekonsiliasi Tarif Progresif Pasal 17 UU HPP:</strong> Pada bulan Desember (atau masa pajak terakhir), metode TER tidak lagi digunakan. Penghitungan dilakukan secara akumulatif setahun penuh menggunakan rumus normal: <em>(Penghasilan Bruto Setahun - Biaya Jabatan - Iuran Pensiun - PTKP) = PKP</em>. PKP kemudian dikenakan tarif progresif Pasal 17 (5%, 15%, 25%, 30%, 35%).</li>
           <li><strong>Split Withholding (Pemotongan Terpisah per Komponen):</strong> Dalam sistem birokrasi pemerintah, Gaji rutin dibayarkan lewat SKPD/Biro Kepegawaian, TPP dibayarkan terpisah, dan honorarium lintas kegiatan dibayarkan oleh panitia/OPD lain. Ketika dipotong secara parsial di masing-masing slip, bruto berada pada rentang tarif TER yang rendah. Namun ketika semua penghasilan digabungkan di akhir tahun, total PKP melonjak ke lapisan tarif 15% atau 25%, menimbulkan kekurangan potong yang harus diselesaikan di bulan Desember.</li>
@@ -105,7 +105,7 @@ export function renderFaqView(): string {
           <h4 class="font-bold text-slate-900 mb-1">1. Kuota Perhitungan:</h4>
           <ul class="list-disc pl-5 space-y-1 text-slate-700">
             <li><strong>Wajib Login Google:</strong> Seluruh pengguna wajib masuk menggunakan Akun Google resmi (mode tamu dinonaktifkan).</li>
-            <li><strong>Pengguna Terverifikasi:</strong> Diberikan kuota 25x perhitungan per hari secara cuma-cuma.</li>
+            <li><strong>Pengguna Terverifikasi:</strong> Setiap akun Google diberikan kuota 25x perhitungan per hari.</li>
             <li><strong>Administrator:</strong> Memiliki kuota tanpa batas (Unlimited) serta akses ke Dashboard Admin.</li>
           </ul>
         </div>
@@ -114,7 +114,7 @@ export function renderFaqView(): string {
           <ul class="list-disc pl-5 space-y-1 text-slate-700">
             <li>Gunakan tombol <strong>Ekspor</strong> untuk mengunduh seluruh data Anda ke file <code>.json</code> yang aman di perangkat lokal Anda. Data tidak disimpan permanen di server luar untuk menjaga privasi.</li>
             <li>Gunakan tombol <strong>Impor</strong> untuk memuat kembali file JSON cadangan Anda kapan saja. File akan divalidasi dengan skema ketat untuk menjamin integritas data.</li>
-            <li>Gunakan tombol <strong>Template Dummy</strong> jika Anda ingin melihat sampel pengisian ASN/PNS siap pakai.</li>
+            <li>Gunakan tombol <strong>Template Dummy</strong> jika Anda ingin melihat sampel pengisian ASN siap pakai.</li>
           </ul>
         </div>
       `

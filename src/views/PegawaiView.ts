@@ -23,7 +23,7 @@ export function renderPegawaiView(): string {
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             Profil Wajib Pajak & Pengaturan Instansi
           </div>
-          <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white mb-2">Data Pegawai ASN/PNS & Parameter Pemotongan</h2>
+          <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white mb-2">Data Pegawai ASN & Parameter Pemotongan</h2>
           <p class="text-sm text-slate-300 leading-relaxed">
             Data identitas ini digunakan untuk menentukan kategori TER bulanan (A, B, atau C), batasan PTKP saat rekonsiliasi akhir periode/Desember, serta identitas resmi pemotong pada formulir bukti potong <strong>1721-BPA2</strong>.
           </p>
@@ -40,7 +40,7 @@ export function renderPegawaiView(): string {
             <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
               <div class="flex items-center gap-2">
                 <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs">1</span>
-                <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Identitas Pegawai ASN / PNS</h3>
+                <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Identitas Pegawai ASN</h3>
               </div>
               <span class="text-xs text-slate-400">*Wajib untuk pelaporan BPA2</span>
             </div>

@@ -332,13 +332,13 @@ class AppState {
     this.dataset = getSampleDummyDataset();
     this.recalculateTax(false);
     this.saveDatasetToStorage();
-    logService.recordLog('IMPORT', `Memuat data template dummy bawaan ASN/PNS: ${this.dataset.pegawai.nama} (NIK: ${this.dataset.pegawai.nik || '-'})`, {
+    logService.recordLog('IMPORT', `Memuat data template dummy bawaan ASN: ${this.dataset.pegawai.nama} (NIK: ${this.dataset.pegawai.nik || '-'})`, {
       nama: this.dataset.pegawai.nama,
       nik: this.dataset.pegawai.nik,
       nip: this.dataset.pegawai.nip,
       instansi: this.dataset.pegawai.instansi?.nama_instansi
     });
-    this.showToast('success', 'Template Dummy Dimuat', 'Data ASN/PNS contoh (Budi Santoso, S.Kom., M.T.) berhasil dimuat lengkap dengan 12 bulan penghasilan.');
+    this.showToast('success', 'Template Dummy Dimuat', 'Data ASN contoh (Budi Santoso, S.Kom., M.T.) berhasil dimuat lengkap dengan 12 bulan penghasilan.');
     this.notify();
   }
 

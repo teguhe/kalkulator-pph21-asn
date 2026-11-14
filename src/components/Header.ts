@@ -104,7 +104,7 @@ export function renderHeader(): string {
                     Kalkulator PPh 21
                   </h1>
                   <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
-                    ASN / PNS
+                    ASN
                   </span>
                 </div>
                 <p class="text-[11px] sm:text-xs text-slate-500 hidden sm:block truncate">
@@ -150,7 +150,7 @@ export function renderHeader(): string {
                   Kalkulator PPh 21
                 </h1>
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
-                  ASN / PNS
+                  ASN
                 </span>
               </div>
               <p class="text-[11px] sm:text-xs text-slate-500 hidden sm:block truncate">
@@ -166,7 +166,7 @@ export function renderHeader(): string {
 
             <!-- Toolbar buttons -->
             <div class="hidden lg:flex items-center gap-1.5 border-l border-slate-200 pl-3">
-              <button id="btn-load-dummy" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors shadow-xs cursor-pointer" title="Muat Data Sampel Dummy ASN/PNS">
+              <button id="btn-load-dummy" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors shadow-xs cursor-pointer" title="Muat Data Sampel Dummy ASN">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                 <span>Template Dummy</span>
               </button>

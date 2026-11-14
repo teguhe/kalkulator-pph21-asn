@@ -34,9 +34,9 @@ function renderLoginGate(): string {
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
           </svg>
         </div>
-        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mb-2">Selamat Datang di Kalkulator PPh 21 ASN/PNS</h2>
+        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mb-2">Kalkulator PPh 21 ASN</h2>
         <p class="text-xs sm:text-sm text-slate-600 mb-6 leading-relaxed">
-          Sesuai kebijakan sistem, semua pengguna <strong>wajib masuk menggunakan Akun Google resmi</strong> terlebih dahulu untuk menggunakan fitur kalkulator dan pencetakan BPA2. Mode tamu telah dinonaktifkan.
+          Semua pengguna wajib masuk menggunakan Akun Google terlebih dahulu untuk menggunakan fitur kalkulator dan pencetakan BPA2.
         </p>
 
         <div class="space-y-3 max-w-sm mx-auto mb-6">
@@ -59,7 +59,7 @@ function renderLoginGate(): string {
 
         <div class="pt-6 border-t border-slate-100 text-xs text-slate-600 flex items-center justify-center gap-2">
           <span class="text-emerald-600 font-bold">&check;</span>
-          <span>Diberikan <strong>kuota 25x perhitungan per hari</strong> secara cuma-cuma untuk setiap akun Google.</span>
+          <span>Setiap akun Google diberikan kuota 25x perhitungan per hari</span>
         </div>
       </div>
     </div>
@@ -105,7 +105,7 @@ function renderApp(): void {
       <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 no-print mt-auto">
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div>
-            <strong>Kalkulator PPh 21 & Generator BPA2 Pegawai ASN/PNS</strong> &copy; ${new Date().getFullYear()} Teguh Prasetyo, M.Si.
+            <strong>Kalkulator PPh 21 & Generator BPA2 ASN</strong> &copy; ${new Date().getFullYear()} Teguh Prasetyo, M.Si.
           </div>
           <div class="flex items-center gap-4 text-slate-600">
             <span>PP 58/2023 & PMK 168/2023</span>

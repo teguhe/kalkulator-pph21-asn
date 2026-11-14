@@ -1,7 +1,7 @@
 {
   "name": "kalkulator-pph21",
   "version": "1.0.0",
-  "description": "Kalkulator PPh 21 & Generator BPA2 Pegawai ASN/PNS",
+  "description": "Kalkulator PPh 21 & Generator BPA2 ASN",
   "type": "module",
   "scripts": {
     "dev": "vite",

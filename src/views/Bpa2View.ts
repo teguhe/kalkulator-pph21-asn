@@ -359,7 +359,7 @@ export function renderBpa2View(): string {
               <div><span class="text-slate-500">Nama Instansi:</span> <span class="font-semibold text-slate-900">${currentPemotongTitle}</span></div>
               <div><span class="text-slate-500">NPWP Instansi:</span> <span class="font-mono text-slate-900">${formatNPWP(currentPemotongNPWP)}</span></div>
               <div class="text-[10px] text-slate-500 italic mt-2">
-                *Bukti pemotongan ini sah dan dicetak secara elektronik melalui Sistem Kalkulator PPh 21 ASN/PNS.
+                *Bukti pemotongan ini sah dan dicetak secara elektronik melalui Sistem Kalkulator PPh 21 ASN.
               </div>
             </div>
 
