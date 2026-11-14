@@ -39,9 +39,6 @@ export function renderToastContainer(): string {
 }
 
 export function renderModals(): string {
-  const isFbConfigured = authService.isFirebaseConfigured();
-  const fbConfig = authService.getFirebaseConfig();
-
   return `
     <!-- Hidden File Input for JSON Import -->
     <input type="file" id="json-file-input" accept=".json,application/json" class="hidden" />
@@ -62,12 +59,12 @@ export function renderModals(): string {
           <button id="btn-close-modal-login" class="text-slate-400 hover:text-slate-600 text-lg leading-none cursor-pointer">&times;</button>
         </div>
 
-        <p class="text-xs text-slate-600 mb-4 leading-relaxed">
+        <p class="text-xs text-slate-600 mb-5 leading-relaxed">
           Autentikasi resmi menggunakan Google Sign-In memberikan Anda <strong>kuota 25x perhitungan per hari</strong> secara cuma-cuma.
         </p>
 
         <!-- Google Login Action Button -->
-        <div class="mb-4">
+        <div>
           <button id="btn-do-google-login" class="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-800 font-bold text-xs sm:text-sm rounded-xl border border-slate-300 shadow-xs transition hover:shadow cursor-pointer">
             <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -77,48 +74,6 @@ export function renderModals(): string {
             </svg>
             <span id="label-google-login-text">Lanjutkan dengan Google</span>
           </button>
-        </div>
-
-        <!-- Firebase Config Section (Collapsible) -->
-        <div class="pt-2 border-t border-slate-100">
-          <button id="btn-toggle-modal-firebase-config" type="button" class="text-[11px] text-slate-500 hover:text-slate-800 flex items-center justify-between w-full py-1 cursor-pointer">
-            <span class="flex items-center gap-1">
-              <span>⚙️ Pengaturan Kredensial Firebase</span>
-              ${isFbConfigured ? '<span class="text-emerald-600 font-semibold">(Terhubung)</span>' : '<span class="text-amber-600 font-semibold">(Belum Diatur)</span>'}
-            </span>
-            <span id="icon-toggle-firebase" class="text-xs">&darr;</span>
-          </button>
-
-          <div id="section-firebase-modal-config" class="${isFbConfigured ? 'hidden' : ''} mt-3 p-3 bg-amber-50/70 border border-amber-200 rounded-xl text-xs space-y-2.5">
-            <p class="text-[11px] text-amber-900 leading-snug">
-              Agar Google Sign-In aktif di browser, pastikan Anda telah memasukkan kredensial Web App dari <strong>Firebase Console</strong> (atau via <code>.env</code>):
-            </p>
-            <form id="form-modal-firebase-config" class="space-y-2">
-              <div>
-                <label class="block text-[10px] font-semibold text-slate-700 mb-0.5">Firebase API Key</label>
-                <input type="text" id="fb-modal-api-key" value="${fbConfig?.apiKey || ''}" required placeholder="AIzaSy..." 
-                  class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white outline-none font-mono" />
-              </div>
-              <div>
-                <label class="block text-[10px] font-semibold text-slate-700 mb-0.5">Auth Domain</label>
-                <input type="text" id="fb-modal-auth-domain" value="${fbConfig?.authDomain || ''}" required placeholder="project-id.firebaseapp.com" 
-                  class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white outline-none font-mono" />
-              </div>
-              <div>
-                <label class="block text-[10px] font-semibold text-slate-700 mb-0.5">Project ID</label>
-                <input type="text" id="fb-modal-project-id" value="${fbConfig?.projectId || ''}" required placeholder="project-id" 
-                  class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white outline-none font-mono" />
-              </div>
-              <div>
-                <label class="block text-[10px] font-semibold text-slate-700 mb-0.5">App ID (Opsional)</label>
-                <input type="text" id="fb-modal-app-id" value="${fbConfig?.appId || ''}" placeholder="1:123456789:web:abcdef" 
-                  class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white outline-none font-mono" />
-              </div>
-              <button type="submit" class="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs rounded-lg transition shadow-xs cursor-pointer">
-                Simpan & Aktifkan Firebase
-              </button>
-            </form>
-          </div>
         </div>
       </div>
     </div>

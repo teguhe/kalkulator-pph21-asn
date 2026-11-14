@@ -21,8 +21,6 @@ import { renderAdminView } from './views/AdminView';
 const appEl = document.getElementById('app')!;
 
 function renderLoginGate(): string {
-  const isFbConfigured = authService.isFirebaseConfigured();
-
   return `
     <div class="max-w-xl mx-auto py-10 text-center">
       <div class="bg-white rounded-3xl border border-slate-200 p-8 sm:p-10 shadow-sm">
@@ -49,12 +47,6 @@ function renderLoginGate(): string {
             </svg>
             <span>Masuk dengan Akun Google</span>
           </button>
-
-          ${!isFbConfigured ? `
-            <button id="btn-gate-setup-firebase" class="w-full py-2.5 px-4 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold text-xs rounded-xl border border-amber-300 transition cursor-pointer">
-              ⚙️ Pengaturan Kredensial Firebase API
-            </button>
-          ` : ''}
         </div>
 
         <div class="pt-6 border-t border-slate-100 text-xs text-slate-600 flex items-center justify-center gap-2">
@@ -202,22 +194,49 @@ function attachEventListeners(): void {
     });
   });
 
-  // Gatekeeper Buttons (Shown when not logged in)
+  // Google Sign-In Handler
+  const handleGoogleSignIn = async (triggerBtn?: HTMLElement | null) => {
+    if (!authService.isFirebaseConfigured()) {
+      appState.showToast('warning', 'Autentikasi Belum Aktif', 'Konfigurasi Firebase belum diatur. Silakan hubungi Administrator situs.');
+      return;
+    }
+
+    const originalHtml = triggerBtn ? triggerBtn.innerHTML : '';
+    try {
+      if (triggerBtn) {
+        triggerBtn.setAttribute('disabled', 'true');
+        triggerBtn.classList.add('opacity-75', 'cursor-not-allowed');
+        triggerBtn.innerHTML = `
+          <span class="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+          <span>Menghubungkan ke Google...</span>
+        `;
+      }
+
+      const user = await authService.signInWithGoogle();
+      document.getElementById('modal-login')?.classList.add('hidden');
+      logService.recordLog('LOGIN', `Login sukses dengan akun Google: ${user.email} (${user.isAdmin ? 'Admin' : 'Pegawai'})`);
+
+      if (user.isAdmin) {
+        appState.showToast('success', 'Akses Administrator Terbuka', `Selamat datang, ${user.displayName || user.email} (Administrator).`);
+      } else {
+        appState.showToast('success', 'Login Berhasil', `Selamat datang, ${user.displayName || user.email} (+25 Kuota Harian).`);
+      }
+    } catch (err: any) {
+      console.error('Google Sign-In Error:', err);
+      appState.showToast('error', 'Gagal Login Google', err.message || 'Terjadi kesalahan saat masuk dengan Google.');
+    } finally {
+      if (triggerBtn) {
+        triggerBtn.removeAttribute('disabled');
+        triggerBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+        triggerBtn.innerHTML = originalHtml;
+      }
+    }
+  };
+
+  // Gatekeeper Button (Shown on login welcome card)
   const btnGateGoogle = document.getElementById('btn-gate-google-login');
   btnGateGoogle?.addEventListener('click', () => {
-    document.getElementById('modal-login')?.classList.remove('hidden');
-  });
-
-  const btnGateSetupFb = document.getElementById('btn-gate-setup-firebase');
-  btnGateSetupFb?.addEventListener('click', () => {
-    document.getElementById('modal-login')?.classList.remove('hidden');
-    document.getElementById('section-firebase-modal-config')?.classList.remove('hidden');
-  });
-
-  const btnHeaderSetupFb = document.getElementById('btn-header-setup-firebase');
-  btnHeaderSetupFb?.addEventListener('click', () => {
-    document.getElementById('modal-login')?.classList.remove('hidden');
-    document.getElementById('section-firebase-modal-config')?.classList.remove('hidden');
+    handleGoogleSignIn(btnGateGoogle);
   });
 
   const btnHeaderFaq = document.getElementById('btn-header-faq');
@@ -280,7 +299,7 @@ function attachEventListeners(): void {
   const openLogin = () => modalLogin?.classList.remove('hidden');
   const closeLogin = () => modalLogin?.classList.add('hidden');
 
-  btnOpenLogin?.addEventListener('click', openLogin);
+  btnOpenLogin?.addEventListener('click', () => handleGoogleSignIn(btnOpenLogin));
   btnPromptLogin?.addEventListener('click', openLogin);
   btnCloseLogin?.addEventListener('click', closeLogin);
 
@@ -295,70 +314,10 @@ function attachEventListeners(): void {
     appState.setActiveTab('admin');
   });
 
-  // Real Google Sign-In Button
+  // Real Google Sign-In Button inside Modal
   const btnDoGoogle = document.getElementById('btn-do-google-login');
-  btnDoGoogle?.addEventListener('click', async () => {
-    if (!authService.isFirebaseConfigured()) {
-      appState.showToast('warning', 'Konfigurasi Diperlukan', 'Kredensial Firebase belum terhubung. Silakan isi form di bawah.');
-      document.getElementById('section-firebase-modal-config')?.classList.remove('hidden');
-      return;
-    }
-
-    const originalHtml = btnDoGoogle.innerHTML;
-    try {
-      btnDoGoogle.setAttribute('disabled', 'true');
-      btnDoGoogle.classList.add('opacity-75', 'cursor-not-allowed');
-      btnDoGoogle.innerHTML = `
-        <span class="inline-block w-4 h-4 border-2 border-slate-700 border-t-transparent rounded-full animate-spin"></span>
-        <span>Menghubungkan ke Google...</span>
-      `;
-
-      const user = await authService.signInWithGoogle();
-      closeLogin();
-      logService.recordLog('LOGIN', `Login sukses dengan akun Google: ${user.email} (${user.isAdmin ? 'Admin' : 'Pegawai'})`);
-
-      if (user.isAdmin) {
-        appState.showToast('success', 'Akses Administrator Terbuka', `Selamat datang, ${user.displayName || user.email} (Administrator).`);
-      } else {
-        appState.showToast('success', 'Login Berhasil', `Selamat datang, ${user.displayName || user.email} (+25 Kuota Harian).`);
-      }
-    } catch (err: any) {
-      console.error('Google Sign-In Error:', err);
-      appState.showToast('error', 'Gagal Login Google', err.message || 'Terjadi kesalahan saat masuk dengan Google.');
-    } finally {
-      btnDoGoogle.removeAttribute('disabled');
-      btnDoGoogle.classList.remove('opacity-75', 'cursor-not-allowed');
-      btnDoGoogle.innerHTML = originalHtml;
-    }
-  });
-
-  // Toggle Firebase Config in Modal
-  const btnToggleFb = document.getElementById('btn-toggle-modal-firebase-config');
-  btnToggleFb?.addEventListener('click', () => {
-    const sec = document.getElementById('section-firebase-modal-config');
-    sec?.classList.toggle('hidden');
-  });
-
-  // Modal Firebase Config Form
-  const formModalFb = document.getElementById('form-modal-firebase-config') as HTMLFormElement;
-  formModalFb?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const apiKey = (document.getElementById('fb-modal-api-key') as HTMLInputElement).value.trim();
-    const authDomain = (document.getElementById('fb-modal-auth-domain') as HTMLInputElement).value.trim();
-    const projectId = (document.getElementById('fb-modal-project-id') as HTMLInputElement).value.trim();
-    const appId = (document.getElementById('fb-modal-app-id') as HTMLInputElement)?.value.trim() || undefined;
-
-    try {
-      const ok = authService.saveFirebaseConfig({ apiKey, authDomain, projectId, appId });
-      if (ok) {
-        appState.showToast('success', 'Firebase Terhubung', 'Konfigurasi Firebase berhasil disimpan. Sekarang Anda dapat Masuk dengan Akun Google.');
-        appState.notify();
-      } else {
-        appState.showToast('error', 'Gagal Inisialisasi', 'Konfigurasi tersimpan namun inisialisasi Firebase gagal. Periksa kembali kredensial Anda.');
-      }
-    } catch (err: any) {
-      appState.showToast('error', 'Gagal', err.message || 'Gagal menyimpan konfigurasi.');
-    }
+  btnDoGoogle?.addEventListener('click', () => {
+    handleGoogleSignIn(btnDoGoogle);
   });
 
   // Toast Dismissal

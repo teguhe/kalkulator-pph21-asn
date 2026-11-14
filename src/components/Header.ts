@@ -76,11 +76,6 @@ export function renderHeader(): string {
           </svg>
           <span>Google Sign-In</span>
         </button>
-        ${!authService.isFirebaseConfigured() ? `
-          <button id="btn-header-setup-firebase" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-semibold rounded-lg border border-amber-300 shadow-xs transition cursor-pointer" title="Buka Form Konfigurasi Firebase / API Key">
-            <span>⚙️ Form API Firebase</span>
-          </button>
-        ` : ''}
       </div>
     `;
   }
