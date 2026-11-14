@@ -57,15 +57,9 @@ function renderLoginGate(): string {
           ` : ''}
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left pt-6 border-t border-slate-100 text-xs text-slate-600">
-          <div class="flex items-start gap-2">
-            <span class="text-emerald-600 font-bold">&check;</span>
-            <span><strong>Kuota 25x/Hari:</strong> Diberikan cuma-cuma untuk setiap akun Google yang login.</span>
-          </div>
-          <div class="flex items-start gap-2">
-            <span class="text-emerald-600 font-bold">&check;</span>
-            <span><strong>Akses Administrator:</strong> Akses penuh tanpa batas bagi akun Google admin terdaftar.</span>
-          </div>
+        <div class="pt-6 border-t border-slate-100 text-xs text-slate-600 flex items-center justify-center gap-2">
+          <span class="text-emerald-600 font-bold">&check;</span>
+          <span>Diberikan <strong>kuota 25x perhitungan per hari</strong> secara cuma-cuma untuk setiap akun Google.</span>
         </div>
       </div>
     </div>
@@ -111,7 +105,7 @@ function renderApp(): void {
       <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 no-print mt-auto">
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div>
-            <strong>Kalkulator PPh 21 & Generator BPA2 Pegawai ASN/PNS</strong> &copy; ${new Date().getFullYear()}
+            <strong>Kalkulator PPh 21 & Generator BPA2 Pegawai ASN/PNS</strong> &copy; ${new Date().getFullYear()} Teguh Prasetyo, M.Si.
           </div>
           <div class="flex items-center gap-4 text-slate-600">
             <span>PP 58/2023 & PMK 168/2023</span>
@@ -224,6 +218,16 @@ function attachEventListeners(): void {
   btnHeaderSetupFb?.addEventListener('click', () => {
     document.getElementById('modal-login')?.classList.remove('hidden');
     document.getElementById('section-firebase-modal-config')?.classList.remove('hidden');
+  });
+
+  const btnHeaderFaq = document.getElementById('btn-header-faq');
+  btnHeaderFaq?.addEventListener('click', () => {
+    appState.setActiveTab('faq');
+  });
+
+  const btnHeaderLogo = document.getElementById('btn-header-logo-home');
+  btnHeaderLogo?.addEventListener('click', () => {
+    appState.setActiveTab('pegawai');
   });
 
   // Header Actions

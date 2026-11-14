@@ -1,49 +1,38 @@
 import { appState } from '../state/appState';
 import { authService } from '../services/authService';
-import { formatNumber } from '../utils/formatters';
 
 export function renderHeader(): string {
   const { currentUser, quotaState } = appState;
 
   let quotaBadgeHtml = '';
-  if (!currentUser) {
-    quotaBadgeHtml = `
-      <div class="flex items-center gap-2">
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 shadow-xs" title="Semua pengguna wajib login dengan akun Google">
-          <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-          Wajib Login Google
+  if (currentUser) {
+    if (quotaState.isUnlimited) {
+      quotaBadgeHtml = `
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-xs" title="Super Admin / Admin Akses Tanpa Batas">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          Kuota: Unlimited (Admin)
         </span>
-        <button id="btn-header-login-prompt" class="text-xs text-emerald-700 hover:text-emerald-900 font-bold underline cursor-pointer">
-          Masuk
-        </button>
-      </div>
-    `;
-  } else if (quotaState.isUnlimited) {
-    quotaBadgeHtml = `
-      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-xs" title="Super Admin / Admin Akses Tanpa Batas">
-        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        Kuota: Unlimited (Admin)
-      </span>
-    `;
-  } else {
-    const badgeColor = quotaState.remaining > 0 
-      ? 'bg-blue-50 text-blue-700 border-blue-200' 
-      : 'bg-rose-50 text-rose-700 border-rose-200';
-    quotaBadgeHtml = `
-      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${badgeColor} border shadow-xs" title="Sisa perhitungan harian">
-        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        Kuota: ${quotaState.remaining} / ${quotaState.limit}
-      </span>
-    `;
+      `;
+    } else {
+      const badgeColor = quotaState.remaining > 0 
+        ? 'bg-blue-50 text-blue-700 border-blue-200' 
+        : 'bg-rose-50 text-rose-700 border-rose-200';
+      quotaBadgeHtml = `
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${badgeColor} border shadow-xs" title="Sisa perhitungan harian">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Kuota: ${quotaState.remaining} / ${quotaState.limit}
+        </span>
+      `;
+    }
   }
 
   let authSectionHtml = '';
   if (currentUser) {
     authSectionHtml = `
       <div class="relative group">
-        <button id="btn-user-profile-menu" class="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+        <button id="btn-user-profile-menu" class="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer">
           <div class="w-8 h-8 rounded-full bg-linear-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow-xs">
             ${currentUser.displayName ? currentUser.displayName.slice(0, 2).toUpperCase() : 'US'}
           </div>
@@ -63,12 +52,12 @@ export function renderHeader(): string {
             <div class="text-slate-400 truncate">${currentUser.email}</div>
           </div>
           ${currentUser.isAdmin ? `
-            <button id="btn-menu-to-admin" class="w-full text-left px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-50 rounded-lg flex items-center gap-2">
+            <button id="btn-menu-to-admin" class="w-full text-left px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-50 rounded-lg flex items-center gap-2 cursor-pointer">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               Dashboard Admin
             </button>
           ` : ''}
-          <button id="btn-header-signout" class="w-full text-left px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg flex items-center gap-2">
+          <button id="btn-header-signout" class="w-full text-left px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg flex items-center gap-2 cursor-pointer">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
             Keluar (Sign Out)
           </button>
@@ -96,12 +85,60 @@ export function renderHeader(): string {
     `;
   }
 
+  // Jika belum login, sembunyikan semua toolbar menu atas kecuali FAQ dan Google Sign-In
+  if (!currentUser) {
+    return `
+      <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-between h-16 gap-4">
+            <!-- Logo & Title (Bisa diklik untuk kembali ke Halaman Masuk) -->
+            <button id="btn-header-logo-home" class="flex items-center gap-3 min-w-0 shrink text-left cursor-pointer">
+              <div class="w-10 h-10 rounded-xl bg-linear-to-tr from-emerald-600 via-teal-600 to-indigo-700 flex items-center justify-center text-white shadow-sm shrink-0">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <h1 class="text-sm sm:text-base lg:text-lg font-bold text-slate-900 tracking-tight whitespace-nowrap">
+                    Kalkulator PPh 21
+                  </h1>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
+                    ASN / PNS
+                  </span>
+                </div>
+                <p class="text-[11px] sm:text-xs text-slate-500 hidden sm:block truncate">
+                  PP 58/2023, PMK 168/2023 &bull; Generator 1721-BPA2
+                </p>
+              </div>
+            </button>
+
+            <!-- Menu Kanan Sebelum Login: Hanya FAQ dan Login Google -->
+            <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+              <button id="btn-header-faq" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${appState.activeTab === 'faq' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'} transition cursor-pointer">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Pusat Bantuan & FAQ</span>
+              </button>
+
+              <div class="border-l border-slate-200 pl-2 sm:pl-3">
+                ${authSectionHtml}
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+    `;
+  }
+
+  // Jika sudah login: tampilkan navbar lengkap dengan toolbar & profil
   return `
     <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs no-print">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16 gap-4">
           <!-- Logo & Title -->
-          <div class="flex items-center gap-3 min-w-0 shrink">
+          <button id="btn-header-logo-home" class="flex items-center gap-3 min-w-0 shrink text-left cursor-pointer">
             <div class="w-10 h-10 rounded-xl bg-linear-to-tr from-emerald-600 via-teal-600 to-indigo-700 flex items-center justify-center text-white shadow-sm shrink-0">
               <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -120,7 +157,7 @@ export function renderHeader(): string {
                 PP 58/2023, PMK 168/2023 &bull; Generator 1721-BPA2
               </p>
             </div>
-          </div>
+          </button>
 
           <!-- Action Buttons & User Info -->
           <div class="flex items-center gap-2 sm:gap-3 shrink-0">
@@ -129,19 +166,19 @@ export function renderHeader(): string {
 
             <!-- Toolbar buttons -->
             <div class="hidden lg:flex items-center gap-1.5 border-l border-slate-200 pl-3">
-              <button id="btn-load-dummy" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors shadow-xs" title="Muat Data Sampel Dummy ASN/PNS">
+              <button id="btn-load-dummy" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors shadow-xs cursor-pointer" title="Muat Data Sampel Dummy ASN/PNS">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                 <span>Template Dummy</span>
               </button>
-              <button id="btn-import-json" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-100 border border-slate-300 transition-colors" title="Impor Data JSON">
+              <button id="btn-import-json" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-100 border border-slate-300 transition-colors cursor-pointer" title="Impor Data JSON">
                 <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
                 <span>Impor</span>
               </button>
-              <button id="btn-export-json" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-100 border border-slate-300 transition-colors" title="Ekspor Data JSON">
+              <button id="btn-export-json" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-100 border border-slate-300 transition-colors cursor-pointer" title="Ekspor Data JSON">
                 <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 <span>Ekspor</span>
               </button>
-              <button id="btn-reset-data" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors" title="Reset ke Data Kosong">
+              <button id="btn-reset-data" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors cursor-pointer" title="Reset ke Data Kosong">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 <span>Reset</span>
               </button>
@@ -154,12 +191,12 @@ export function renderHeader(): string {
           </div>
         </div>
 
-        <!-- Mobile Action Toolbar -->
+        <!-- Mobile Action Toolbar (Hanya ketika sudah login) -->
         <div class="lg:hidden flex items-center justify-between py-2 border-t border-slate-100 gap-1 overflow-x-auto text-xs">
-          <button id="btn-load-dummy-mobile" class="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded border border-emerald-200 font-semibold shrink-0">Template Dummy</button>
-          <button id="btn-import-json-mobile" class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded border border-slate-200 shrink-0">Impor</button>
-          <button id="btn-export-json-mobile" class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded border border-slate-200 shrink-0">Ekspor</button>
-          <button id="btn-reset-data-mobile" class="px-2.5 py-1 bg-rose-50 text-rose-700 rounded border border-rose-200 shrink-0">Reset</button>
+          <button id="btn-load-dummy-mobile" class="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded border border-emerald-200 font-semibold shrink-0 cursor-pointer">Template Dummy</button>
+          <button id="btn-import-json-mobile" class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded border border-slate-200 shrink-0 cursor-pointer">Impor</button>
+          <button id="btn-export-json-mobile" class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded border border-slate-200 shrink-0 cursor-pointer">Ekspor</button>
+          <button id="btn-reset-data-mobile" class="px-2.5 py-1 bg-rose-50 text-rose-700 rounded border border-rose-200 shrink-0 cursor-pointer">Reset</button>
         </div>
       </div>
     </header>

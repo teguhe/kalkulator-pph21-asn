@@ -63,7 +63,7 @@ export function renderModals(): string {
         </div>
 
         <p class="text-xs text-slate-600 mb-4 leading-relaxed">
-          Autentikasi resmi menggunakan Google Sign-In memberikan Anda <strong>kuota 25x perhitungan per hari</strong> dan perlindungan keamanan akses Administrator.
+          Autentikasi resmi menggunakan Google Sign-In memberikan Anda <strong>kuota 25x perhitungan per hari</strong> secara cuma-cuma.
         </p>
 
         <!-- Google Login Action Button -->

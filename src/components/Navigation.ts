@@ -3,6 +3,11 @@ import { appState } from '../state/appState';
 export function renderNavigation(): string {
   const { activeTab, currentUser } = appState;
 
+  // Jika belum login, semua menu navigasi di atas tidak ditampilkan
+  if (!currentUser) {
+    return '';
+  }
+
   const tabs = [
     {
       id: 'pegawai',
