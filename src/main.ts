@@ -411,8 +411,8 @@ function attachTerBulananListeners(): void {
     el.addEventListener('blur', (e) => {
       const target = e.target as HTMLInputElement;
       const parsed = parseFormattedNumber(target.value);
+      el.value = parsed ? formatNumber(parsed) : '';
       appState.updateTerBulananKomponen(compKey, 'bruto', parsed, false);
-      appState.notify(); // Re-render to refresh table, rates, combined calculation, and comparison alerts
     });
 
     el.addEventListener('keydown', (e) => {
@@ -426,6 +426,22 @@ function attachTerBulananListeners(): void {
   bindCurrency('ter-input-p2', 'penghasilan_2');
   bindCurrency('ter-input-p3', 'penghasilan_3');
   bindCurrency('ter-input-p4', 'penghasilan_4');
+
+  // Tombol Hitung PPh 21 Bulanan (Kurangi kuota & masukkan ke log)
+  document.getElementById('btn-ter-calculate')?.addEventListener('click', () => {
+    // Sinkronisasi input langsung dari DOM sebelum kalkulasi
+    const p1 = parseFormattedNumber((document.getElementById('ter-input-p1') as HTMLInputElement)?.value || '0');
+    const p2 = parseFormattedNumber((document.getElementById('ter-input-p2') as HTMLInputElement)?.value || '0');
+    const p3 = parseFormattedNumber((document.getElementById('ter-input-p3') as HTMLInputElement)?.value || '0');
+    const p4 = parseFormattedNumber((document.getElementById('ter-input-p4') as HTMLInputElement)?.value || '0');
+
+    appState.updateTerBulananKomponen('penghasilan_1', 'bruto', p1, false);
+    appState.updateTerBulananKomponen('penghasilan_2', 'bruto', p2, false);
+    appState.updateTerBulananKomponen('penghasilan_3', 'bruto', p3, false);
+    appState.updateTerBulananKomponen('penghasilan_4', 'bruto', p4, false);
+
+    appState.calculateTerBulananWithQuota();
+  });
 
   // Dummy Button
   document.getElementById('btn-ter-dummy')?.addEventListener('click', () => {

@@ -22,74 +22,76 @@ export function renderTerBulananView(): string {
 
   // Status selisih styling
   let selisihCardHtml = '';
-  if (calc.selisih > 0) {
-    selisihCardHtml = `
-      <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5 text-amber-950">
-        <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-xl bg-amber-200 text-amber-800 flex items-center justify-center font-bold text-lg shrink-0 mt-0.5">
-            ⚠️
+  if (calc) {
+    if (calc.selisih > 0) {
+      selisihCardHtml = `
+        <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5 text-amber-950">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-200 text-amber-800 flex items-center justify-center font-bold text-lg shrink-0 mt-0.5">
+              ⚠️
+            </div>
+            <div class="space-y-1.5 flex-1">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h4 class="text-sm font-bold text-amber-900 uppercase tracking-wide">
+                  Potensi Kurang Potong Bulanan Terdeteksi
+                </h4>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold bg-amber-200 text-amber-900 border border-amber-300">
+                  Selisih: +${formatRupiah(calc.selisih)}
+                </span>
+              </div>
+              <p class="text-xs text-amber-900/90 leading-relaxed">
+                Jika pemotongan dilakukan terpisah oleh masing-masing bendahara, total pajak yang dipotong adalah <strong>${formatRupiah(calc.total_pajak_terpisah)}</strong>. Namun menurut ketentuan <strong>PP 58/2023 &amp; PMK 168/2023</strong>, seluruh penghasilan bruto yang diterima dalam satu masa pajak (1 bulan) dijumlahkan sehingga tarif TER melonjak menjadi <strong>${calc.ter_rate_gabungan}%</strong> (Pajak Terutang: <strong>${formatRupiah(calc.pajak_gabungan)}</strong>).
+              </p>
+              <div class="pt-2 text-xs font-semibold text-amber-950 flex items-center gap-1.5">
+                <span>💡</span>
+                <span>Selisih <strong>${formatRupiah(calc.selisih)}</strong> ini akan menjadi beban kurang bayar yang harus diselesaikan pada rekonsiliasi akhir tahun/Desember di menu <strong>PPh TER Setahun</strong>.</span>
+              </div>
+            </div>
           </div>
-          <div class="space-y-1.5 flex-1">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <h4 class="text-sm font-bold text-amber-900 uppercase tracking-wide">
-                Potensi Kurang Potong Bulanan Terdeteksi
+        </div>
+      `;
+    } else if (calc.selisih < 0) {
+      selisihCardHtml = `
+        <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5 text-blue-950">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-200 text-blue-800 flex items-center justify-center font-bold text-lg shrink-0 mt-0.5">
+              ℹ️
+            </div>
+            <div class="space-y-1 flex-1">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h4 class="text-sm font-bold text-blue-900 uppercase tracking-wide">
+                  Potensi Lebih Potong Bulanan
+                </h4>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold bg-blue-200 text-blue-900 border border-blue-300">
+                  Selisih: -${formatRupiah(Math.abs(calc.selisih))}
+                </span>
+              </div>
+              <p class="text-xs text-blue-900/90 leading-relaxed">
+                Total pajak pemotongan terpisah lebih besar daripada tarif gabungan bulanan.
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      selisihCardHtml = `
+        <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-5 text-emerald-950">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-200 text-emerald-800 flex items-center justify-center font-bold text-lg shrink-0">
+              ✓
+            </div>
+            <div class="space-y-0.5 flex-1">
+              <h4 class="text-sm font-bold text-emerald-900 uppercase tracking-wide">
+                Perhitungan Sesuai &amp; Nihil Selisih
               </h4>
-              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold bg-amber-200 text-amber-900 border border-amber-300">
-                Selisih: +${formatRupiah(calc.selisih)}
-              </span>
-            </div>
-            <p class="text-xs text-amber-900/90 leading-relaxed">
-              Jika pemotongan dilakukan terpisah oleh masing-masing bendahara, total pajak yang dipotong adalah <strong>${formatRupiah(calc.total_pajak_terpisah)}</strong>. Namun menurut ketentuan <strong>PP 58/2023 &amp; PMK 168/2023</strong>, seluruh penghasilan bruto yang diterima dalam satu masa pajak (1 bulan) dijumlahkan sehingga tarif TER melonjak menjadi <strong>${calc.ter_rate_gabungan}%</strong> (Pajak Terutang: <strong>${formatRupiah(calc.pajak_gabungan)}</strong>).
-            </p>
-            <div class="pt-2 text-xs font-semibold text-amber-950 flex items-center gap-1.5">
-              <span>💡</span>
-              <span>Selisih <strong>${formatRupiah(calc.selisih)}</strong> ini akan menjadi beban kurang bayar yang harus diselesaikan pada rekonsiliasi akhir tahun/Desember di menu <strong>PPh TER Setahun</strong>.</span>
+              <p class="text-xs text-emerald-800/90 leading-relaxed">
+                Total pemotongan terpisah (${formatRupiah(calc.total_pajak_terpisah)}) identik dengan perhitungan tarif TER gabungan sebulan (${formatRupiah(calc.pajak_gabungan)}).
+              </p>
             </div>
           </div>
         </div>
-      </div>
-    `;
-  } else if (calc.selisih < 0) {
-    selisihCardHtml = `
-      <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5 text-blue-950">
-        <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-xl bg-blue-200 text-blue-800 flex items-center justify-center font-bold text-lg shrink-0 mt-0.5">
-            ℹ️
-          </div>
-          <div class="space-y-1 flex-1">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <h4 class="text-sm font-bold text-blue-900 uppercase tracking-wide">
-                Potensi Lebih Potong Bulanan
-              </h4>
-              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold bg-blue-200 text-blue-900 border border-blue-300">
-                Selisih: -${formatRupiah(Math.abs(calc.selisih))}
-              </span>
-            </div>
-            <p class="text-xs text-blue-900/90 leading-relaxed">
-              Total pajak pemotongan terpisah lebih besar daripada tarif gabungan bulanan.
-            </p>
-          </div>
-        </div>
-      </div>
-    `;
-  } else {
-    selisihCardHtml = `
-      <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-5 text-emerald-950">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-emerald-200 text-emerald-800 flex items-center justify-center font-bold text-lg shrink-0">
-            ✓
-          </div>
-          <div class="space-y-0.5 flex-1">
-            <h4 class="text-sm font-bold text-emerald-900 uppercase tracking-wide">
-              Perhitungan Sesuai &amp; Nihil Selisih
-            </h4>
-            <p class="text-xs text-emerald-800/90 leading-relaxed">
-              Total pemotongan terpisah (${formatRupiah(calc.total_pajak_terpisah)}) identik dengan perhitungan tarif TER gabungan sebulan (${formatRupiah(calc.pajak_gabungan)}).
-            </p>
-          </div>
-        </div>
-      </div>
-    `;
+      `;
+    }
   }
 
   return `
@@ -252,8 +254,8 @@ export function renderTerBulananView(): string {
               </div>
             </div>
             <div class="flex items-center justify-between text-xs text-slate-600 pt-1 border-t border-slate-200">
-              <span>Tarif TER: <strong class="text-emerald-700">${calc.items[0].ter_rate}%</strong></span>
-              <span>Pajak: <strong class="text-slate-900">${formatRupiah(calc.items[0].pajak)}</strong></span>
+              <span>Tarif TER: <strong class="text-emerald-700">${calc ? `${calc.items[0].ter_rate}%` : '-'}</strong></span>
+              <span>Pajak: <strong class="text-slate-900">${calc ? formatRupiah(calc.items[0].pajak) : 'Rp -'}</strong></span>
             </div>
           </div>
 
@@ -278,8 +280,8 @@ export function renderTerBulananView(): string {
               </div>
             </div>
             <div class="flex items-center justify-between text-xs text-slate-600 pt-1 border-t border-slate-200">
-              <span>Tarif TER: <strong class="text-teal-700">${calc.items[1].ter_rate}%</strong></span>
-              <span>Pajak: <strong class="text-slate-900">${formatRupiah(calc.items[1].pajak)}</strong></span>
+              <span>Tarif TER: <strong class="text-teal-700">${calc ? `${calc.items[1].ter_rate}%` : '-'}</strong></span>
+              <span>Pajak: <strong class="text-slate-900">${calc ? formatRupiah(calc.items[1].pajak) : 'Rp -'}</strong></span>
             </div>
           </div>
 
@@ -304,8 +306,8 @@ export function renderTerBulananView(): string {
               </div>
             </div>
             <div class="flex items-center justify-between text-xs text-slate-600 pt-1 border-t border-slate-200">
-              <span>Tarif TER: <strong class="text-indigo-700">${calc.items[2].ter_rate}%</strong></span>
-              <span>Pajak: <strong class="text-slate-900">${formatRupiah(calc.items[2].pajak)}</strong></span>
+              <span>Tarif TER: <strong class="text-indigo-700">${calc ? `${calc.items[2].ter_rate}%` : '-'}</strong></span>
+              <span>Pajak: <strong class="text-slate-900">${calc ? formatRupiah(calc.items[2].pajak) : 'Rp -'}</strong></span>
             </div>
           </div>
 
@@ -330,12 +332,50 @@ export function renderTerBulananView(): string {
               </div>
             </div>
             <div class="flex items-center justify-between text-xs text-slate-600 pt-1 border-t border-slate-200">
-              <span>Tarif TER: <strong class="text-amber-700">${calc.items[3].ter_rate}%</strong></span>
-              <span>Pajak: <strong class="text-slate-900">${formatRupiah(calc.items[3].pajak)}</strong></span>
+              <span>Tarif TER: <strong class="text-amber-700">${calc ? `${calc.items[3].ter_rate}%` : '-'}</strong></span>
+              <span>Pajak: <strong class="text-slate-900">${calc ? formatRupiah(calc.items[3].pajak) : 'Rp -'}</strong></span>
             </div>
           </div>
         </div>
+
+        <!-- Tombol Hitung & Info Kuota -->
+        <div class="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-2.5 text-xs text-slate-600">
+            <div class="w-8 h-8 rounded-lg ${appState.isTerBulananDirty ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'} flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p class="font-medium text-slate-700">
+                ${appState.isTerBulananDirty 
+                  ? '<span class="text-amber-700 font-bold">⚠️ Ada perubahan data penghasilan yang belum dihitung.</span>' 
+                  : (calc ? '<span class="text-emerald-700 font-semibold">✓ Hasil perhitungan di bawah sesuai data input saat ini.</span>' : 'Masukkan nominal 4 penghasilan di atas, lalu klik tombol hitung.')
+                }
+              </p>
+              <p class="text-[11px] text-slate-400">
+                Sisa Kuota Perhitungan: <strong class="${appState.quotaState.isUnlimited || appState.quotaState.remaining > 0 ? 'text-emerald-700' : 'text-rose-600'}">${appState.quotaState.isUnlimited ? 'Unlimited (Admin)' : `${appState.quotaState.remaining} dari ${appState.quotaState.limit}x/hari`}</strong>
+              </p>
+            </div>
+          </div>
+
+          <button id="btn-ter-calculate" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs sm:text-sm shadow-sm hover:shadow transition cursor-pointer">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            <span>Hitung PPh 21 Bulanan</span>
+          </button>
+        </div>
       </div>
+
+      ${appState.isTerBulananDirty && calc ? `
+        <div class="bg-amber-50 border border-amber-300 text-amber-900 px-4 py-3 rounded-xl text-xs flex items-center justify-between gap-3 shadow-xs">
+          <div class="flex items-center gap-2.5">
+            <span class="text-base">⚠️</span>
+            <span>Nilai penghasilan telah diubah. Hasil di bawah merupakan perhitungan sebelumnya. Klik <strong>Hitung PPh 21 Bulanan</strong> untuk memperbarui hasil perhitungan.</span>
+          </div>
+        </div>
+      ` : ''}
 
       <!-- Section 3: Tabel Rincian Perhitungan Masing-Masing Penghasilan -->
       <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
@@ -356,7 +396,6 @@ export function renderTerBulananView(): string {
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">
                 <th class="py-2.5 px-3">Komponen Penghasilan</th>
-                <th class="py-2.5 px-3">Keterangan / Bendahara</th>
                 <th class="py-2.5 px-3 text-right">Penghasilan Bruto</th>
                 <th class="py-2.5 px-3 text-center">Tarif TER (%)</th>
                 <th class="py-2.5 px-3 text-right">Nominal Pajak PPh 21</th>
@@ -364,7 +403,7 @@ export function renderTerBulananView(): string {
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 font-medium">
-              ${calc.items.map((item, idx) => `
+              ${calc ? calc.items.map((item, idx) => `
                 <tr class="hover:bg-slate-50/60">
                   <td class="py-2.5 px-3 font-semibold text-slate-800">
                     <div class="flex items-center gap-2">
@@ -372,7 +411,6 @@ export function renderTerBulananView(): string {
                       <span>${item.nama}</span>
                     </div>
                   </td>
-                  <td class="py-2.5 px-3 text-slate-500">${item.keterangan || '-'}</td>
                   <td class="py-2.5 px-3 text-right font-mono font-semibold text-slate-900">${formatRupiah(item.bruto)}</td>
                   <td class="py-2.5 px-3 text-center">
                     <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold ${
@@ -388,22 +426,28 @@ export function renderTerBulananView(): string {
                     ${formatRupiah(item.netto)}
                   </td>
                 </tr>
-              `).join('')}
+              `).join('') : `
+                <tr>
+                  <td colspan="5" class="py-8 text-center text-slate-400 italic">
+                    Belum ada perhitungan. Masukkan nilai penghasilan di atas lalu klik tombol <strong>Hitung PPh 21 Bulanan</strong>.
+                  </td>
+                </tr>
+              `}
             </tbody>
             <tfoot>
               <tr class="bg-slate-100/80 font-bold border-t-2 border-slate-300 text-slate-900">
-                <td colspan="2" class="py-3 px-3 uppercase text-[11px] tracking-wider text-slate-700">
+                <td class="py-3 px-3 uppercase text-[11px] tracking-wider text-slate-700">
                   Total Pemotongan Terpisah (Akumulasi Masing-Masing)
                 </td>
                 <td class="py-3 px-3 text-right font-mono text-sm text-emerald-800">
-                  ${formatRupiah(calc.total_bruto_terpisah)}
+                  ${calc ? formatRupiah(calc.total_bruto_terpisah) : '-'}
                 </td>
                 <td class="py-3 px-3 text-center text-slate-400">-</td>
                 <td class="py-3 px-3 text-right font-mono text-sm text-rose-700">
-                  ${formatRupiah(calc.total_pajak_terpisah)}
+                  ${calc ? formatRupiah(calc.total_pajak_terpisah) : '-'}
                 </td>
                 <td class="py-3 px-3 text-right font-mono text-sm text-slate-900">
-                  ${formatRupiah(calc.total_netto_terpisah)}
+                  ${calc ? formatRupiah(calc.total_netto_terpisah) : '-'}
                 </td>
               </tr>
             </tfoot>
@@ -433,7 +477,7 @@ export function renderTerBulananView(): string {
           <div class="bg-white/5 border border-white/10 rounded-xl p-4 space-y-1">
             <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Bruto Sebulan (Gabungan)</div>
             <div class="text-xl sm:text-2xl font-extrabold text-white font-mono">
-              ${formatRupiah(calc.bruto_sebulan)}
+              ${calc ? formatRupiah(calc.bruto_sebulan) : 'Rp -'}
             </div>
             <div class="text-[10px] text-emerald-400">Total akumulasi 4 penghasilan</div>
           </div>
@@ -442,7 +486,7 @@ export function renderTerBulananView(): string {
           <div class="bg-white/5 border border-white/10 rounded-xl p-4 space-y-1">
             <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Persen Pajak (Tarif TER)</div>
             <div class="text-xl sm:text-2xl font-extrabold text-emerald-400 font-mono">
-              ${calc.ter_rate_gabungan}%
+              ${calc ? `${calc.ter_rate_gabungan}%` : '-'}
             </div>
             <div class="text-[10px] text-slate-300">Berdasarkan Tabel Kategori ${p.kategori_ter}</div>
           </div>
@@ -451,16 +495,16 @@ export function renderTerBulananView(): string {
           <div class="bg-white/5 border border-white/10 rounded-xl p-4 space-y-1">
             <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Nominal Pajak PPh 21</div>
             <div class="text-xl sm:text-2xl font-extrabold text-rose-300 font-mono">
-              ${formatRupiah(calc.pajak_gabungan)}
+              ${calc ? formatRupiah(calc.pajak_gabungan) : 'Rp -'}
             </div>
-            <div class="text-[10px] text-slate-300 font-mono">${formatRupiah(calc.bruto_sebulan)} &times; ${calc.ter_rate_gabungan}%</div>
+            <div class="text-[10px] text-slate-300 font-mono">${calc ? `${formatRupiah(calc.bruto_sebulan)} &times; ${calc.ter_rate_gabungan}%` : 'Menunggu tombol Hitung'}</div>
           </div>
 
           <!-- Penghasilan Netto Gabungan -->
           <div class="bg-white/5 border border-white/10 rounded-xl p-4 space-y-1">
             <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Netto Setelah Pajak</div>
             <div class="text-xl sm:text-2xl font-extrabold text-teal-300 font-mono">
-              ${formatRupiah(calc.netto_gabungan)}
+              ${calc ? formatRupiah(calc.netto_gabungan) : 'Rp -'}
             </div>
             <div class="text-[10px] text-slate-300">Bruto sebulan dikurangi pajak</div>
           </div>
@@ -483,25 +527,25 @@ export function renderTerBulananView(): string {
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
               <div class="text-xs font-semibold text-slate-500 mb-1">A. Pajak Dipotong Terpisah</div>
-              <div class="text-lg font-bold text-slate-800 font-mono">${formatRupiah(calc.total_pajak_terpisah)}</div>
+              <div class="text-lg font-bold text-slate-800 font-mono">${calc ? formatRupiah(calc.total_pajak_terpisah) : 'Rp -'}</div>
               <p class="text-[11px] text-slate-500 mt-1">Total potongan oleh 4 bendahara/kegiatan secara parsial</p>
             </div>
 
             <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
               <div class="text-xs font-semibold text-slate-500 mb-1">B. Pajak Terutang Gabungan Sebulan</div>
-              <div class="text-lg font-bold text-rose-700 font-mono">${formatRupiah(calc.pajak_gabungan)}</div>
-              <p class="text-[11px] text-slate-500 mt-1">Sesuai PP 58/2023 atas total bruto ${formatRupiah(calc.bruto_sebulan)}</p>
+              <div class="text-lg font-bold text-rose-700 font-mono">${calc ? formatRupiah(calc.pajak_gabungan) : 'Rp -'}</div>
+              <p class="text-[11px] text-slate-500 mt-1">${calc ? `Sesuai PP 58/2023 atas total bruto ${formatRupiah(calc.bruto_sebulan)}` : 'Sesuai PP 58/2023'}</p>
             </div>
 
-            <div class="p-4 rounded-xl ${calc.selisih > 0 ? 'bg-amber-50 border border-amber-300' : 'bg-emerald-50 border border-emerald-300'}">
-              <div class="text-xs font-semibold ${calc.selisih > 0 ? 'text-amber-800' : 'text-emerald-800'} mb-1">
+            <div class="p-4 rounded-xl ${calc && calc.selisih > 0 ? 'bg-amber-50 border border-amber-300' : 'bg-emerald-50 border border-emerald-300'}">
+              <div class="text-xs font-semibold ${calc && calc.selisih > 0 ? 'text-amber-800' : 'text-emerald-800'} mb-1">
                 Selisih (B - A)
               </div>
-              <div class="text-lg font-bold font-mono ${calc.selisih > 0 ? 'text-amber-900' : 'text-emerald-900'}">
-                ${calc.selisih > 0 ? '+' : ''}${formatRupiah(calc.selisih)}
+              <div class="text-lg font-bold font-mono ${calc && calc.selisih > 0 ? 'text-amber-900' : 'text-emerald-900'}">
+                ${calc ? `${calc.selisih > 0 ? '+' : ''}${formatRupiah(calc.selisih)}` : 'Rp -'}
               </div>
-              <p class="text-[11px] ${calc.selisih > 0 ? 'text-amber-700' : 'text-emerald-700'} mt-1">
-                ${calc.selisih > 0 ? 'Potensi kurang potong bulanan' : calc.selisih === 0 ? 'Pemotongan telah sesuai nihil' : 'Potensi lebih potong'}
+              <p class="text-[11px] ${calc && calc.selisih > 0 ? 'text-amber-700' : 'text-emerald-700'} mt-1">
+                ${calc ? (calc.selisih > 0 ? 'Potensi kurang potong bulanan' : calc.selisih === 0 ? 'Pemotongan telah sesuai nihil' : 'Potensi lebih potong') : 'Menunggu perhitungan'}
               </p>
             </div>
           </div>

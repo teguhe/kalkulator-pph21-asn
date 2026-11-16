@@ -17,6 +17,7 @@ import { PTKP_MAP, getTERRate } from '../../taxConstants';
 
 const DATASET_STORAGE_KEY = 'pph21_saved_dataset';
 const TER_BULANAN_STORAGE_KEY = 'pph21_saved_ter_bulanan';
+const TER_BULANAN_CALC_STORAGE_KEY = 'pph21_saved_ter_bulanan_calc';
 const SIDEBAR_COLLAPSED_KEY = 'pph21_sidebar_collapsed';
 
 export interface ToastMessage {
@@ -42,6 +43,8 @@ class AppState {
   public isSidebarMobileOpen: boolean = false;
   public isSidebarCollapsed: boolean = false;
   public terBulananInput: TerBulananInputState;
+  public terBulananCalculation: HasilTerBulananPerhitungan | null = null;
+  public isTerBulananDirty: boolean = false;
   public activeMonth: number = 1; // 1 to 12
   public currentUser: UserProfile | null = null;
   public quotaState: QuotaState;
@@ -56,6 +59,7 @@ class AppState {
   constructor() {
     this.dataset = this.loadInitialDataset();
     this.terBulananInput = this.loadInitialTerBulananInput();
+    this.terBulananCalculation = this.loadInitialTerBulananCalc();
     this.isSidebarCollapsed = this.loadInitialSidebarCollapsed();
     this.currentUser = authService.getCurrentUser();
     this.quotaState = quotaService.getQuotaState();
@@ -109,6 +113,30 @@ class AppState {
       localStorage.setItem(TER_BULANAN_STORAGE_KEY, JSON.stringify(this.terBulananInput));
     } catch (e) {
       console.warn('Could not save ter bulanan to localStorage', e);
+    }
+  }
+
+  private loadInitialTerBulananCalc(): HasilTerBulananPerhitungan | null {
+    try {
+      const stored = localStorage.getItem(TER_BULANAN_CALC_STORAGE_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch {
+      // Fallback
+    }
+    return null;
+  }
+
+  public saveTerBulananCalcToStorage(): void {
+    try {
+      if (this.terBulananCalculation) {
+        localStorage.setItem(TER_BULANAN_CALC_STORAGE_KEY, JSON.stringify(this.terBulananCalculation));
+      } else {
+        localStorage.removeItem(TER_BULANAN_CALC_STORAGE_KEY);
+      }
+    } catch (e) {
+      console.warn('Could not save ter bulanan calc to localStorage', e);
     }
   }
 
@@ -238,6 +266,7 @@ class AppState {
       if (ptkpConf) {
         this.dataset.pegawai.kategori_ter = ptkpConf.kategoriTER;
       }
+      this.isTerBulananDirty = true;
     }
 
     this.recalculateTax(false);
@@ -358,6 +387,7 @@ class AppState {
   ): void {
     if (this.terBulananInput[compKey]) {
       (this.terBulananInput[compKey] as any)[field] = value;
+      this.isTerBulananDirty = true;
       this.saveTerBulananToStorage();
       if (shouldNotify) {
         this.notify();
@@ -365,7 +395,7 @@ class AppState {
     }
   }
 
-  public getTerBulananCalculation(): HasilTerBulananPerhitungan {
+  public computeTerBulanan(): HasilTerBulananPerhitungan {
     const kat = this.dataset.pegawai.kategori_ter || 'A';
     const keys: ('penghasilan_1' | 'penghasilan_2' | 'penghasilan_3' | 'penghasilan_4')[] = [
       'penghasilan_1', 'penghasilan_2', 'penghasilan_3', 'penghasilan_4'
@@ -389,7 +419,7 @@ class AppState {
       return {
         id: comp.id,
         nama: comp.nama,
-        keterangan: comp.keterangan,
+        keterangan: comp.keterangan || '',
         bruto,
         ter_rate,
         pajak,
@@ -416,14 +446,82 @@ class AppState {
     };
   }
 
+  public getTerBulananCalculation(): HasilTerBulananPerhitungan | null {
+    return this.terBulananCalculation;
+  }
+
+  public calculateTerBulananWithQuota(): boolean {
+    if (!this.currentUser) {
+      this.showToast('warning', 'Wajib Login', 'Silakan masuk dengan Akun Google terlebih dahulu untuk melakukan perhitungan.');
+      if (typeof document !== 'undefined') {
+        document.getElementById('modal-login')?.classList.remove('hidden');
+      }
+      return false;
+    }
+
+    if (!quotaService.canCalculate()) {
+      this.showToast('error', 'Batas Kuota Tercapai', 'Kuota perhitungan Anda hari ini telah habis (25x per hari).');
+      return false;
+    }
+
+    // Kurangi kuota perhitungan
+    quotaService.consumeQuota();
+    this.quotaState = quotaService.getQuotaState();
+
+    // Lakukan perhitungan
+    const calc = this.computeTerBulanan();
+    this.terBulananCalculation = calc;
+    this.isTerBulananDirty = false;
+    this.saveTerBulananCalcToStorage();
+
+    // Masukkan ke log audit
+    const nama = this.dataset.pegawai.nama || 'Tanpa Nama';
+    const nik = this.dataset.pegawai.nik || '-';
+    const nip = this.dataset.pegawai.nip || '-';
+    const instansi = this.dataset.pegawai.instansi?.nama_instansi || '-';
+    const ptkp = this.dataset.pegawai.status_ptkp;
+    const kat = this.dataset.pegawai.kategori_ter;
+
+    logService.recordLog(
+      'CALCULATE',
+      `Perhitungan PPh 21 TER Bulanan: ${nama} (${ptkp} - TER ${kat})`,
+      {
+        modul: 'TER_BULANAN',
+        nama,
+        nik,
+        nip,
+        instansi,
+        status_ptkp: ptkp,
+        kategori_ter: kat,
+        total_bruto: calc.bruto_sebulan,
+        total_pajak: calc.pajak_gabungan,
+        total_pajak_terpisah: calc.total_pajak_terpisah,
+        selisih: calc.selisih,
+        komponen: {
+          penghasilan_1: { nama: this.terBulananInput.penghasilan_1.nama, bruto: this.terBulananInput.penghasilan_1.bruto, pajak: calc.items[0].pajak },
+          penghasilan_2: { nama: this.terBulananInput.penghasilan_2.nama, bruto: this.terBulananInput.penghasilan_2.bruto, pajak: calc.items[1].pajak },
+          penghasilan_3: { nama: this.terBulananInput.penghasilan_3.nama, bruto: this.terBulananInput.penghasilan_3.bruto, pajak: calc.items[2].pajak },
+          penghasilan_4: { nama: this.terBulananInput.penghasilan_4.nama, bruto: this.terBulananInput.penghasilan_4.bruto, pajak: calc.items[3].pajak }
+        }
+      }
+    );
+
+    this.showToast('success', 'Perhitungan Berhasil', 'PPh 21 TER bulanan berhasil dihitung dan dicatat ke log.');
+    this.notify();
+    return true;
+  }
+
   public copyTerBulananToMonth(monthNum: number): void {
+    if (!this.terBulananCalculation) {
+      this.showToast('warning', 'Belum Dihitung', 'Silakan klik tombol "Hitung PPh 21 Bulanan" terlebih dahulu sebelum menyalin data ke Form 2.');
+      return;
+    }
+
     const bulanIndex = monthNum - 1;
     const b = this.dataset.periode_bulanan[bulanIndex];
     if (!b) return;
 
-    const kat = this.dataset.pegawai.kategori_ter || 'A';
-    const calc = this.getTerBulananCalculation();
-
+    const calc = this.terBulananCalculation;
     const keys: ('penghasilan_1' | 'penghasilan_2' | 'penghasilan_3' | 'penghasilan_4')[] = [
       'penghasilan_1', 'penghasilan_2', 'penghasilan_3', 'penghasilan_4'
     ];
@@ -460,8 +558,11 @@ class AppState {
     this.terBulananInput.penghasilan_4.bruto = kp.penghasilan_4.bruto || 0;
     this.terBulananInput.penghasilan_4.nama = kp.penghasilan_4.label || 'Penghasilan Lainnya 2 (Honorarium Kegiatan)';
 
+    this.terBulananCalculation = null;
+    this.isTerBulananDirty = true;
     this.saveTerBulananToStorage();
-    this.showToast('info', 'Data Dimuat', `Data 4 penghasilan dari Bulan ${b.nama_bulan} berhasil dimuat ke PPh TER Bulanan.`);
+    this.saveTerBulananCalcToStorage();
+    this.showToast('info', 'Data Dimuat', `Data 4 penghasilan dari Bulan ${b.nama_bulan} dimuat. Klik tombol "Hitung PPh 21 Bulanan" untuk memproses pajak.`);
     this.notify();
   }
 
@@ -472,8 +573,11 @@ class AppState {
       penghasilan_3: { id: 'p3', nama: 'Penghasilan Lainnya 1 (Upah Pungut)', bruto: 1500000, keterangan: 'Bendahara Bapenda' },
       penghasilan_4: { id: 'p4', nama: 'Penghasilan Lainnya 2 (Honorarium Pokja)', bruto: 1000000, keterangan: 'Bendahara Panitia Kegiatan' },
     };
+    this.terBulananCalculation = null;
+    this.isTerBulananDirty = true;
     this.saveTerBulananToStorage();
-    this.showToast('success', 'Sampel TER Bulanan Dimuat', 'Data simulasi 4 komponen penghasilan ASN berhasil dimuat.');
+    this.saveTerBulananCalcToStorage();
+    this.showToast('info', 'Sampel TER Bulanan Dimuat', 'Data simulasi 4 komponen penghasilan ASN dimuat. Klik tombol "Hitung PPh 21 Bulanan" untuk memproses perhitungan.');
     this.notify();
   }
 
@@ -482,7 +586,10 @@ class AppState {
     this.terBulananInput.penghasilan_2.bruto = 0;
     this.terBulananInput.penghasilan_3.bruto = 0;
     this.terBulananInput.penghasilan_4.bruto = 0;
+    this.terBulananCalculation = null;
+    this.isTerBulananDirty = false;
     this.saveTerBulananToStorage();
+    this.saveTerBulananCalcToStorage();
     this.showToast('info', 'Input Dikosongkan', 'Seluruh nilai bruto pada perhitungan TER bulanan telah direset ke Rp 0.');
     this.notify();
   }
