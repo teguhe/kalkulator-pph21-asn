@@ -74,16 +74,16 @@ function renderApp(): void {
         contentHtml = renderTerBulananView();
         break;
       case 'pegawai':
-        contentHtml = renderNavigation() + renderPegawaiView();
+        contentHtml = renderPegawaiView();
         break;
       case 'input':
-        contentHtml = renderNavigation() + renderInputPenghasilanView();
+        contentHtml = renderInputPenghasilanView();
         break;
       case 'hasil':
-        contentHtml = renderNavigation() + renderHasilRekonsiliasiView();
+        contentHtml = renderHasilRekonsiliasiView();
         break;
       case 'bpa2':
-        contentHtml = renderNavigation() + renderBpa2View();
+        contentHtml = renderBpa2View();
         break;
       case 'faq':
         contentHtml = renderFaqView();
@@ -119,10 +119,6 @@ function renderApp(): void {
             <strong>Kalkulator PPh 21 & Generator BPA2 ASN</strong> &copy; ${new Date().getFullYear()} Teguh Prasetyo, M.Si.
           </div>
           <div class="flex items-center gap-3 text-slate-600">
-            <button id="btn-footer-faq" class="text-emerald-700 hover:text-emerald-800 font-semibold transition cursor-pointer hover:underline">
-              Pusat Bantuan &amp; FAQ
-            </button>
-            <span>&bull;</span>
             <span>PP 58/2023 &amp; PMK 168/2023</span>
             <span>&bull;</span>
             <span>Formulir 1721-BPA2</span>
@@ -282,8 +278,6 @@ function attachEventListeners(): void {
   // Pusat Bantuan & FAQ Event Listeners
   const handleOpenFaq = () => appState.setActiveTab('faq');
   document.getElementById('btn-header-faq')?.addEventListener('click', handleOpenFaq);
-  document.getElementById('btn-menu-faq')?.addEventListener('click', handleOpenFaq);
-  document.getElementById('btn-footer-faq')?.addEventListener('click', handleOpenFaq);
 
   // Navigasi Kembali ke Dashboard
   const handleBackToDashboard = () => appState.setActiveTab('dashboard');
@@ -337,12 +331,6 @@ function attachEventListeners(): void {
   btnSignout?.addEventListener('click', async () => {
     await authService.signOut();
     appState.showToast('info', 'Keluar', 'Anda telah keluar dari sesi.');
-  });
-
-  // Menu to admin
-  const btnMenuToAdmin = document.getElementById('btn-menu-to-admin');
-  btnMenuToAdmin?.addEventListener('click', () => {
-    appState.setActiveTab('admin');
   });
 
   // Real Google Sign-In Button inside Modal
