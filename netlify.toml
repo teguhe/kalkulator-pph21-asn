@@ -1,0 +1,5 @@
+# Firebase Web SDK config values are public client identifiers by design and
+# must be embedded in the browser bundle. Access is protected by Firebase
+# Security Rules and API key restrictions, not by keeping these values secret.
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "VITE_FIREBASE_API_KEY,VITE_FIREBASE_APP_ID,VITE_FIREBASE_AUTH_DOMAIN,VITE_FIREBASE_MESSAGING_SENDER_ID,VITE_FIREBASE_PROJECT_ID,VITE_FIREBASE_STORAGE_BUCKET"

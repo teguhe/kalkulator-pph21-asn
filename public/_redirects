@@ -1,1 +1,6 @@
+# Firebase Auth helper proxy: lets authDomain be this site's own domain
+/__/auth/*      https://kalkulator-pph21-37603.firebaseapp.com/__/auth/:splat      200
+/__/firebase/*  https://kalkulator-pph21-37603.firebaseapp.com/__/firebase/:splat  200
+
+# SPA fallback
 /*    /index.html   200
