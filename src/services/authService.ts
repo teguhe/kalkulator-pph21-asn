@@ -15,6 +15,15 @@ const ADMIN_STORAGE_KEY = 'pph21_custom_admins';
 const FIREBASE_CONFIG_KEY = 'pph21_firebase_config';
 const CURRENT_USER_KEY = 'pph21_current_user';
 
+export const DEFAULT_FIREBASE_CONFIG: FirebaseClientConfig = {
+  apiKey: 'AIzaSyCsfIZlou-K9mjuTDIE6VP5On0_E0gzuK8',
+  authDomain: 'kalkulator-pph21-37603.firebaseapp.com',
+  projectId: 'kalkulator-pph21-37603',
+  storageBucket: 'kalkulator-pph21-37603.firebasestorage.app',
+  messagingSenderId: '508960807018',
+  appId: '1:508960807018:web:0c28db9b6f47a9b0b79213'
+};
+
 export interface FirebaseClientConfig {
   apiKey: string;
   authDomain: string;
@@ -324,13 +333,14 @@ class AuthService {
         apiKey: envApiKey,
         authDomain: envAuthDomain,
         projectId: envProjectId,
-        storageBucket: envStorageBucket,
-        messagingSenderId: envMessagingSenderId,
-        appId: envAppId
+        storageBucket: envStorageBucket || DEFAULT_FIREBASE_CONFIG.storageBucket,
+        messagingSenderId: envMessagingSenderId || DEFAULT_FIREBASE_CONFIG.messagingSenderId,
+        appId: envAppId || DEFAULT_FIREBASE_CONFIG.appId
       };
     }
 
-    return null;
+    // 3. Project Default Configuration Fallback
+    return DEFAULT_FIREBASE_CONFIG;
   }
 
   public saveFirebaseConfig(config: FirebaseClientConfig): boolean {
