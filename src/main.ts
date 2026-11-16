@@ -225,6 +225,14 @@ function attachEventListeners(): void {
     appState.toggleSidebarMobile(false);
   });
 
+  // Desktop Sidebar Collapse Toggles
+  document.getElementById('btn-toggle-sidebar-collapse')?.addEventListener('click', () => {
+    appState.toggleSidebarCollapse();
+  });
+  document.getElementById('btn-toggle-sidebar-desktop')?.addEventListener('click', () => {
+    appState.toggleSidebarCollapse();
+  });
+
   // Dashboard load dummy button
   document.getElementById('btn-dashboard-load-dummy')?.addEventListener('click', () => {
     appState.loadDummyTemplate();

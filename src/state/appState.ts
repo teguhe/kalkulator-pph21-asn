@@ -17,6 +17,7 @@ import { PTKP_MAP, getTERRate } from '../../taxConstants';
 
 const DATASET_STORAGE_KEY = 'pph21_saved_dataset';
 const TER_BULANAN_STORAGE_KEY = 'pph21_saved_ter_bulanan';
+const SIDEBAR_COLLAPSED_KEY = 'pph21_sidebar_collapsed';
 
 export interface ToastMessage {
   id: string;
@@ -39,6 +40,7 @@ class AppState {
   public calculation: RingkasanTahunan;
   public activeTab: TabType = 'dashboard';
   public isSidebarMobileOpen: boolean = false;
+  public isSidebarCollapsed: boolean = false;
   public terBulananInput: TerBulananInputState;
   public activeMonth: number = 1; // 1 to 12
   public currentUser: UserProfile | null = null;
@@ -54,6 +56,7 @@ class AppState {
   constructor() {
     this.dataset = this.loadInitialDataset();
     this.terBulananInput = this.loadInitialTerBulananInput();
+    this.isSidebarCollapsed = this.loadInitialSidebarCollapsed();
     this.currentUser = authService.getCurrentUser();
     this.quotaState = quotaService.getQuotaState();
     this.calculation = calculatePPh21(this.dataset.pegawai, this.dataset.periode_bulanan);
@@ -109,8 +112,26 @@ class AppState {
     }
   }
 
+  private loadInitialSidebarCollapsed(): boolean {
+    try {
+      return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  }
+
   public toggleSidebarMobile(open?: boolean): void {
     this.isSidebarMobileOpen = typeof open === 'boolean' ? open : !this.isSidebarMobileOpen;
+    this.notify();
+  }
+
+  public toggleSidebarCollapse(collapsed?: boolean): void {
+    this.isSidebarCollapsed = typeof collapsed === 'boolean' ? collapsed : !this.isSidebarCollapsed;
+    try {
+      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(this.isSidebarCollapsed));
+    } catch (e) {
+      console.warn('Could not save sidebar collapsed state', e);
+    }
     this.notify();
   }
 
