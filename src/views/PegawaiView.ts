@@ -118,7 +118,7 @@ export function renderPegawaiView(): string {
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="sm:col-span-2">
+            <div>
               <label class="block text-xs font-semibold text-slate-700 mb-1">Status PTKP (Penghasilan Tidak Kena Pajak)</label>
               <select id="pegawai-ptkp" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white font-medium">
                 ${ptkpOptions}
@@ -145,12 +145,13 @@ export function renderPegawaiView(): string {
               </div>
               <p class="text-[11px] text-slate-500 mt-1">Standar ASN: 4.75% dari Gaji Pokok &amp; Tunjangan Melekat.</p>
             </div>
+          </div>
 
-            <div class="sm:col-span-2 flex items-center p-3 bg-amber-50 border border-amber-200 rounded-lg gap-3">
-              <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              <div id="ptkp-info-banner" class="text-xs text-amber-900 leading-snug">
-                <strong>Nilai PTKP Tahunan:</strong> ${formatRupiah(ptkpInfo.nilaiTahunan)} (${ptkpInfo.deskripsi}). Kategori TER bulanan aktif: <strong>Kategori ${p.kategori_ter}</strong>.
-              </div>
+          <!-- Banner Nilai PTKP Tahunan (Digeser ke bawah, full width) -->
+          <div class="mt-4 flex items-center p-3.5 bg-amber-50 border border-amber-200 rounded-lg gap-3">
+            <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <div id="ptkp-info-banner" class="text-xs text-amber-900 leading-snug">
+              <strong>Nilai PTKP Tahunan:</strong> ${formatRupiah(ptkpInfo.nilaiTahunan)} (${ptkpInfo.deskripsi}). Kategori TER bulanan aktif: <strong>Kategori ${p.kategori_ter}</strong>.
             </div>
           </div>
         </div>
