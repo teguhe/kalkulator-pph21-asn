@@ -457,20 +457,6 @@ function attachTerBulananListeners(): void {
   document.getElementById('btn-ter-print')?.addEventListener('click', () => {
     window.print();
   });
-
-  // Load from Form 2 Button
-  document.getElementById('btn-ter-load-month')?.addEventListener('click', () => {
-    const selectEl = document.getElementById('ter-select-month-load') as HTMLSelectElement;
-    const monthNum = parseInt(selectEl?.value || '1', 10);
-    appState.loadMonthIntoTerBulanan(monthNum);
-  });
-
-  // Copy to Form 2 Button
-  document.getElementById('btn-ter-copy-month')?.addEventListener('click', () => {
-    const selectEl = document.getElementById('ter-select-month-copy') as HTMLSelectElement;
-    const monthNum = parseInt(selectEl?.value || '1', 10);
-    appState.copyTerBulananToMonth(monthNum);
-  });
 }
 
 function attachPegawaiListeners(): void {

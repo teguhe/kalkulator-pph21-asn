@@ -15,11 +15,6 @@ export function renderTerBulananView(): string {
     return `<option value="${key}" ${isSelected}>${key} - ${item.deskripsi} (${formatRupiah(item.nilaiTahunan)} / thn - TER ${item.kategoriTER})</option>`;
   }).join('');
 
-  // Dropdown bulan untuk interoperabilitas dengan Form 2
-  const monthOptionsHtml = dataset.periode_bulanan.map(b => {
-    return `<option value="${b.bulan}">Bulan ${b.bulan} - ${b.nama_bulan}</option>`;
-  }).join('');
-
   // Status selisih styling
   let selisihCardHtml = '';
   if (calc) {
@@ -199,36 +194,13 @@ export function renderTerBulananView(): string {
 
       <!-- Section 2: Input 4 Komponen Penghasilan Bulanan -->
       <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-slate-100 gap-2">
-          <div class="flex items-center gap-2">
-            <span class="w-7 h-7 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-xs">2</span>
-            <div>
-              <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                Input 4 Komponen Penghasilan Bulanan
-              </h3>
-              <p class="text-[11px] text-slate-500">Masukkan nominal penghasilan bruto yang diterima dalam 1 bulan kalender</p>
-            </div>
-          </div>
-
-          <!-- Interoperabilitas dengan Form 2 -->
-          <div class="flex flex-wrap items-center gap-2">
-            <div class="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200 text-xs">
-              <select id="ter-select-month-load" class="px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-medium">
-                ${monthOptionsHtml}
-              </select>
-              <button id="btn-ter-load-month" class="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-semibold text-xs cursor-pointer" title="Muat 4 penghasilan dari bulan yang dipilih di Form 2">
-                Muat dari Form 2
-              </button>
-            </div>
-
-            <div class="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200 text-xs">
-              <select id="ter-select-month-copy" class="px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-medium">
-                ${monthOptionsHtml}
-              </select>
-              <button id="btn-ter-copy-month" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-xs cursor-pointer" title="Salin 4 penghasilan ini ke bulan yang dipilih di Form 2">
-                Salin ke Form 2
-              </button>
-            </div>
+        <div class="flex items-center gap-2 pb-3 border-b border-slate-100">
+          <span class="w-7 h-7 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-xs">2</span>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">
+              Input 4 Komponen Penghasilan Bulanan
+            </h3>
+            <p class="text-[11px] text-slate-500">Masukkan nominal penghasilan bruto yang diterima dalam 1 bulan kalender</p>
           </div>
         </div>
 
