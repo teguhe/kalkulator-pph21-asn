@@ -17,7 +17,7 @@ const CURRENT_USER_KEY = 'pph21_current_user';
 
 export const DEFAULT_FIREBASE_CONFIG: FirebaseClientConfig = {
   apiKey: 'AIzaSyCsfIZlou-K9mjuTDIE6VP5On0_E0gzuK8',
-  authDomain: 'kalkulator-pph21-37603.firebaseapp.com',
+  authDomain: 'kalkulator-pph21-teguhp.netlify.app',
   projectId: 'kalkulator-pph21-37603',
   storageBucket: 'kalkulator-pph21-37603.firebasestorage.app',
   messagingSenderId: '508960807018',
