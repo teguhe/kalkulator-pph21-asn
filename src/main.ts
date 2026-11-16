@@ -448,6 +448,18 @@ function attachTerBulananListeners(): void {
     appState.loadDummyTerBulanan();
   });
 
+  // Export JSON Button
+  document.getElementById('btn-ter-export-json')?.addEventListener('click', () => {
+    exportTerBulananJSON();
+  });
+
+  // Import JSON Button & File Input
+  const terFileInput = document.getElementById('ter-json-file-input') as HTMLInputElement;
+  document.getElementById('btn-ter-import-json')?.addEventListener('click', () => {
+    terFileInput?.click();
+  });
+  terFileInput?.addEventListener('change', handleTerBulananFileImport);
+
   // Reset Button
   document.getElementById('btn-ter-reset')?.addEventListener('click', () => {
     appState.clearTerBulanan();
@@ -1039,6 +1051,152 @@ function handleFileImport(e: Event): void {
       showValidationErrorModal([`File bukan format JSON yang valid: ${err.message || 'Syntax error'}`]);
     } finally {
       // Reset input value so same file can be selected again
+      input.value = '';
+    }
+  };
+
+  reader.readAsText(file);
+}
+
+// File Export Handler untuk PPh TER Bulanan
+function exportTerBulananJSON(): void {
+  const { dataset, terBulananInput, terBulananCalculation } = appState;
+  const p = dataset.pegawai;
+
+  const exportPayload = {
+    app_version: dataset.app_version || '1.0.0',
+    export_type: 'PPH21_TER_BULANAN',
+    exported_at: new Date().toISOString(),
+    pegawai: {
+      nama: p.nama || '',
+      nip: p.nip || '',
+      status_ptkp: p.status_ptkp || 'TK/0',
+      kategori_ter: p.kategori_ter || 'A',
+      instansi: p.instansi?.nama_instansi || ''
+    },
+    komponen_penghasilan: {
+      penghasilan_1: {
+        nama: terBulananInput.penghasilan_1.nama,
+        bruto: terBulananInput.penghasilan_1.bruto || 0
+      },
+      penghasilan_2: {
+        nama: terBulananInput.penghasilan_2.nama,
+        bruto: terBulananInput.penghasilan_2.bruto || 0
+      },
+      penghasilan_3: {
+        nama: terBulananInput.penghasilan_3.nama,
+        bruto: terBulananInput.penghasilan_3.bruto || 0
+      },
+      penghasilan_4: {
+        nama: terBulananInput.penghasilan_4.nama,
+        bruto: terBulananInput.penghasilan_4.bruto || 0
+      }
+    },
+    hasil_perhitungan: terBulananCalculation ? {
+      bruto_sebulan: terBulananCalculation.bruto_sebulan,
+      ter_rate_gabungan: terBulananCalculation.ter_rate_gabungan,
+      pajak_gabungan: terBulananCalculation.pajak_gabungan,
+      total_pajak_terpisah: terBulananCalculation.total_pajak_terpisah,
+      selisih: terBulananCalculation.selisih
+    } : null
+  };
+
+  const jsonStr = JSON.stringify(exportPayload, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safeName = (p.nama || 'Data_ASN').replace(/[^a-zA-Z0-9_-]/g, '_');
+  const dateStr = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `PPh21_TER_Bulanan_${safeName}_${dateStr}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  logService.recordLog('EXPORT', `Ekspor file JSON PPh TER Bulanan: ${p.nama || 'Tanpa Nama'} (${p.status_ptkp})`);
+  appState.showToast('success', 'Ekspor Berhasil', `File ${a.download} berhasil diunduh.`);
+}
+
+// File Import Handler untuk PPh TER Bulanan
+function handleTerBulananFileImport(e: Event): void {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const rawText = event.target?.result as string;
+      const parsed = JSON.parse(rawText);
+
+      if (!parsed || typeof parsed !== 'object') {
+        throw new Error('Data bukan objek JSON yang valid.');
+      }
+
+      let importedNama = '';
+
+      if (parsed.export_type === 'PPH21_TER_BULANAN' || parsed.komponen_penghasilan || parsed.ter_bulanan) {
+        const kp = parsed.komponen_penghasilan || parsed.ter_bulanan || {};
+
+        if (parsed.pegawai) {
+          if (parsed.pegawai.nama) appState.updatePegawai('nama', String(parsed.pegawai.nama), false);
+          if (parsed.pegawai.nip) appState.updatePegawai('nip', String(parsed.pegawai.nip), false);
+          if (parsed.pegawai.status_ptkp) appState.updatePegawai('status_ptkp', parsed.pegawai.status_ptkp, false);
+          importedNama = parsed.pegawai.nama || '';
+        }
+
+        if (kp.penghasilan_1) {
+          if (kp.penghasilan_1.nama) appState.updateTerBulananKomponen('penghasilan_1', 'nama', String(kp.penghasilan_1.nama), false);
+          if (typeof kp.penghasilan_1.bruto === 'number') appState.updateTerBulananKomponen('penghasilan_1', 'bruto', Math.max(0, kp.penghasilan_1.bruto), false);
+        }
+        if (kp.penghasilan_2) {
+          if (kp.penghasilan_2.nama) appState.updateTerBulananKomponen('penghasilan_2', 'nama', String(kp.penghasilan_2.nama), false);
+          if (typeof kp.penghasilan_2.bruto === 'number') appState.updateTerBulananKomponen('penghasilan_2', 'bruto', Math.max(0, kp.penghasilan_2.bruto), false);
+        }
+        if (kp.penghasilan_3) {
+          if (kp.penghasilan_3.nama) appState.updateTerBulananKomponen('penghasilan_3', 'nama', String(kp.penghasilan_3.nama), false);
+          if (typeof kp.penghasilan_3.bruto === 'number') appState.updateTerBulananKomponen('penghasilan_3', 'bruto', Math.max(0, kp.penghasilan_3.bruto), false);
+        }
+        if (kp.penghasilan_4) {
+          if (kp.penghasilan_4.nama) appState.updateTerBulananKomponen('penghasilan_4', 'nama', String(kp.penghasilan_4.nama), false);
+          if (typeof kp.penghasilan_4.bruto === 'number') appState.updateTerBulananKomponen('penghasilan_4', 'bruto', Math.max(0, kp.penghasilan_4.bruto), false);
+        }
+
+        appState.terBulananCalculation = null;
+        appState.isTerBulananDirty = true;
+        appState.saveTerBulananToStorage();
+        appState.saveTerBulananCalcToStorage();
+
+        logService.recordLog('IMPORT', `Impor data JSON PPh TER Bulanan: ${importedNama || appState.dataset.pegawai.nama || 'Tanpa Nama'}`);
+        appState.showToast('success', 'Impor Berhasil', 'Data PPh TER Bulanan berhasil dimuat. Silakan klik tombol Hitung PPh 21 Bulanan untuk melihat hasil kalkulasi.');
+        appState.notify();
+      } else if (parsed.pegawai && parsed.periode_bulanan) {
+        // Mendukung file backup dataset lengkap: muat pegawai & komponen bulan 1
+        if (parsed.pegawai.nama) appState.updatePegawai('nama', String(parsed.pegawai.nama), false);
+        if (parsed.pegawai.nip) appState.updatePegawai('nip', String(parsed.pegawai.nip), false);
+        if (parsed.pegawai.status_ptkp) appState.updatePegawai('status_ptkp', parsed.pegawai.status_ptkp, false);
+
+        const b1 = parsed.periode_bulanan[0]?.komponen_penghasilan;
+        if (b1) {
+          if (b1.penghasilan_1) appState.updateTerBulananKomponen('penghasilan_1', 'bruto', Math.max(0, b1.penghasilan_1.bruto || 0), false);
+          if (b1.penghasilan_2) appState.updateTerBulananKomponen('penghasilan_2', 'bruto', Math.max(0, b1.penghasilan_2.bruto || 0), false);
+          if (b1.penghasilan_3) appState.updateTerBulananKomponen('penghasilan_3', 'bruto', Math.max(0, b1.penghasilan_3.bruto || 0), false);
+          if (b1.penghasilan_4) appState.updateTerBulananKomponen('penghasilan_4', 'bruto', Math.max(0, b1.penghasilan_4.bruto || 0), false);
+        }
+
+        appState.terBulananCalculation = null;
+        appState.isTerBulananDirty = true;
+        appState.saveTerBulananToStorage();
+        appState.saveTerBulananCalcToStorage();
+
+        logService.recordLog('IMPORT', `Impor data JSON dataset ke PPh TER Bulanan: ${parsed.pegawai.nama || 'Tanpa Nama'}`);
+        appState.showToast('success', 'Impor Dataset Berhasil', 'Data pegawai dan 4 penghasilan berhasil dimuat ke PPh TER Bulanan.');
+        appState.notify();
+      } else {
+        appState.showToast('error', 'Format Tidak Didukung', 'File JSON tidak memiliki struktur data PPh 21 TER Bulanan atau Dataset Pegawai.');
+      }
+    } catch (err: any) {
+      appState.showToast('error', 'Gagal Membaca File', `File bukan format JSON yang valid: ${err.message || 'Syntax error'}`);
+    } finally {
       input.value = '';
     }
   };
