@@ -93,8 +93,8 @@ export function renderTerBulananView(): string {
     <div class="space-y-6">
       <!-- Title Card -->
       <div class="bg-linear-to-r from-emerald-800 via-teal-800 to-slate-900 rounded-2xl p-6 text-white shadow-md relative overflow-hidden">
-        <div class="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div class="max-w-2xl">
+        <div class="relative z-10 space-y-4">
+          <div>
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold mb-2">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -104,13 +104,13 @@ export function renderTerBulananView(): string {
             <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white mb-1.5">
               Perhitungan PPh 21 TER Bulanan
             </h2>
-            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-4xl">
               Simulasi perhitungan PPh 21 bulanan berdasarkan <strong>Tarif Efektif Rata-Rata (TER)</strong> PP 58/2023 &amp; PMK 168/2023 untuk 4 komponen penghasilan ASN: perbandingan potongan masing-masing penghasilan vs. perhitungan gabungan sebulan.
             </p>
           </div>
 
-          <!-- Quick Action Buttons -->
-          <div class="shrink-0 flex flex-wrap items-center gap-2">
+          <!-- Quick Action Buttons (Dipindahkan ke bawah text) -->
+          <div class="pt-3 border-t border-white/10 flex flex-wrap items-center gap-2">
             <input type="file" id="ter-json-file-input" accept=".json,application/json" class="hidden" />
 
             <button id="btn-ter-dummy" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-400 hover:bg-emerald-300 text-slate-950 shadow-sm transition-all cursor-pointer" title="Muat Data Sampel ASN">

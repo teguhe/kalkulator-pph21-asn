@@ -18,18 +18,20 @@ export function renderPegawaiView(): string {
     <div class="space-y-6">
       <!-- Title & Context Card -->
       <div class="bg-linear-to-r from-emerald-800 via-teal-800 to-slate-900 rounded-2xl p-6 text-white shadow-md relative overflow-hidden">
-        <div class="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-          <div class="max-w-2xl">
+        <div class="relative z-10 space-y-4">
+          <div>
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold mb-3">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               Perhitungan PPh 21 Setahun &bull; Form 1
             </div>
             <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white mb-2">Form 1: Data Pegawai ASN &amp; Parameter Pemotongan</h2>
-            <p class="text-sm text-slate-300 leading-relaxed">
+            <p class="text-sm text-slate-300 leading-relaxed max-w-4xl">
               Data identitas ini digunakan untuk menentukan kategori TER bulanan (A, B, atau C), batasan PTKP saat rekonsiliasi akhir periode/Desember, serta identitas resmi pemotong pada formulir bukti potong <strong>1721-BPA2</strong>.
             </p>
           </div>
-          <div class="shrink-0 flex flex-wrap items-center gap-2">
+
+          <!-- Action Buttons (Dipindahkan ke bawah text) -->
+          <div class="pt-3 border-t border-white/10 flex flex-wrap items-center gap-2">
             <button id="btn-load-dummy" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-400 hover:bg-emerald-300 active:bg-emerald-500 text-slate-950 shadow-sm transition-all cursor-pointer" title="Muat Data Sampel Dummy ASN">
               <svg class="w-4 h-4 shrink-0 text-slate-950" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
               <span>Template Dummy</span>
