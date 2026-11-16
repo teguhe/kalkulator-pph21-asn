@@ -187,7 +187,7 @@ export function calculatePPh21(pegawai: PegawaiData, periode: PeriodeBulan[]): R
       const penghasilan_neto = Math.max(0, total_bruto_akumulasi - total_pengurang);
 
       // PTKP Tahunan
-      const ptkpConfig = PTKP_MAP[pegawai.status_ptkp] || PTKP_MAP['TK/0'];
+      const ptkpConfig = PTKP_MAP[pegawai.status_ptkp as keyof typeof PTKP_MAP] || PTKP_MAP['TK/0'];
       const ptkp = ptkpConfig.nilaiTahunan;
 
       // PKP (dibulatkan ribuan ke bawah)

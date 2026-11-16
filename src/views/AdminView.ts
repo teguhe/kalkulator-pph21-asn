@@ -210,7 +210,7 @@ export function renderAdminView(): string {
             </div>
             <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white">Dashboard Admin & Rekapitulasi Proses</h2>
             <p class="text-xs sm:text-sm text-slate-300">
-              Login Aktif: <strong>${currentUser.email}</strong> (${currentUser.isSuperAdmin ? 'Super Administrator' : 'Administrator'})
+              Login Aktif: <strong>${currentUser?.email || '-'}</strong> (${currentUser?.isSuperAdmin ? 'Super Administrator' : 'Administrator'})
             </p>
           </div>
           <div class="shrink-0 flex items-center gap-2">

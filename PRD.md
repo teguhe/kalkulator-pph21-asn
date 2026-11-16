@@ -13,19 +13,27 @@
 
 ## 3. Core Features & User Stories
 
-### 3.1 Data Perorangan & Pengaturan Pegawai
-- Input Nama, NIK, NPWP, NIP, Pangkat/Golongan, Jabatan, Status PTKP (TK/0 s.d. K/3), Kategori TER (A, B, C), Persen Iuran Pensiun/THT, dan Data Instansi Utama.
+### 3.1 Perhitungan PPh 21 Setahun (Form 1 s.d. 4)
+- **Form 1: Data Pegawai & Instansi:** Input Nama, NIK, NPWP, NIP, Pangkat/Golongan, Jabatan, Status PTKP (TK/0 s.d. K/3), Kategori TER (A, B, C), Persen Iuran Pensiun/THT, dan Data Instansi Utama.
+- **Form 2: Input Penghasilan (12 Bulan):** 4 komponen penghasilan bruto per bulan (Gaji Melekat, TPP, Penghasilan Lain 1 & 2), pajak dipotong, NPWP bendahara, serta pilihan metode TER bulanan vs. Akhir Periode (Pasal 17).
+- **Form 3: Hasil & Rekonsiliasi:** Rekapitulasi tahunan, perbandingan pajak terutang vs dipotong, dan breakdown lapisan tarif progresif Pasal 17.
+- **Form 4: Cetak Bukti Potong 1721-BPA2:** Generator cetak bukti pemotongan resmi 1721-BPA2 dengan rekapitulasi per bendahara pemotong (Split Withholding).
 
-### 3.2 Input Penghasilan 4 Komponen per Bulan
-Setiap bulan memiliki 4 komponen penghasilan bruto, di mana masing-masing komponen memiliki input:
-1. **Gaji Plus Tunjangan Melekat** (Bruto, Pajak Sudah Dipotong, NPWP Bendahara Pemotong)
-2. **Tunjangan Tambahan Penghasilan / TPP** (Bruto, Pajak Sudah Dipotong, NPWP Bendahara Pemotong)
-3. **Penghasilan Lainnya 1 (Misal: Upah Pungut, dll)** (Bruto, Pajak Sudah Dipotong, NPWP Bendahara Pemotong)
-4. **Penghasilan Lainnya 2 (Misal: Honorarium Lintas OPD, dll)** (Bruto, Pajak Sudah Dipotong, NPWP Bendahara Pemotong)
+### 3.2 Perhitungan PPh 21 TER Bulanan (Fitur Baru)
+- Menggunakan data yang tersinkronisasi dengan Form 1 (Nama, NIP, Status PTKP, dan Kategori TER A/B/C).
+- Input 4 komponen penghasilan bulanan: Gaji Plus Tunjangan Melekat, TPP, Penghasilan Lainnya 1 (Upah Pungut), dan Penghasilan Lainnya 2 (Honorarium Lintas OPD).
+- Perhitungan tarif efektif rata-rata (%) dan nominal pajak PPh 21 untuk masing-masing dari ke-4 komponen penghasilan secara terpisah.
+- Perhitungan pajak ketika ke-4 komponen penghasilan digabung (total bruto sebulan, tarif TER gabungan, dan nominal pajak gabungan).
+- Analisis komparasi selisih (potensi kurang potong/lebih potong bulanan akibat perbedaan pemotongan terpisah bendahara vs gabungan sebulan) sesuai PP 58/2023 & PMK 168/2023.
+- Fitur interoperabilitas: salin data ke/dari Form 2 (Input Penghasilan 12 Bulan) dan cetak ringkasan TER bulanan.
 
-### 3.3 Pilihan Metode Perhitungan & Akhir Periode
-- Pilihan metode: **TER Bulanan** vs **Akhir Periode / Desember** di setiap bulan.
-- Otomatis melakukan perhitungan akumulatif dan koreksi selisih pajak di bulan yang ditandai akhir periode atau di bulan Desember.
+### 3.3 Dashboard & Sidebar Navigasi
+- Setelah login, pengguna disuguhkan **Dashboard** dengan penjelasan pendek mengenai aplikasi dan ringkasan fitur.
+- **Sidebar di sebelah kiri** menyediakan menu navigasi:
+  1. **Dashboard:** Ringkasan sistem dan status pegawai.
+  2. **PPh TER Bulanan:** Perhitungan cepat 4 penghasilan bulanan (parsial vs gabungan).
+  3. **PPh TER Setahun:** Alur lengkap Form 1 sampai 4.
+  4. **FAQ:** Pusat bantuan dan panduan resmi DJP.
 
 ### 3.4 Cetak Formulir BPA2 (Bukti Potong PPh 21)
 - Fitur cetak/export Formulir 1721-BPA2 untuk bulan yang dilakukan perhitungan akhir periode atau bulan Desember, mengakomodasi rekapitulasi per NPWP Bendahara Pemotong.

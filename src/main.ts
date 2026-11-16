@@ -9,8 +9,11 @@ import { PTKP_MAP } from '../taxConstants';
 
 import { renderHeader } from './components/Header';
 import { renderNavigation } from './components/Navigation';
+import { renderSidebar } from './components/Sidebar';
 import { renderToastContainer, renderModals } from './components/Modals';
 
+import { renderDashboardView } from './views/DashboardView';
+import { renderTerBulananView } from './views/TerBulananView';
 import { renderPegawaiView } from './views/PegawaiView';
 import { renderInputPenghasilanView } from './views/InputPenghasilanView';
 import { renderHasilRekonsiliasiView } from './views/HasilRekonsiliasiView';
@@ -64,17 +67,23 @@ function renderApp(): void {
     contentHtml = renderLoginGate();
   } else {
     switch (appState.activeTab) {
+      case 'dashboard':
+        contentHtml = renderDashboardView();
+        break;
+      case 'ter-bulanan':
+        contentHtml = renderTerBulananView();
+        break;
       case 'pegawai':
-        contentHtml = renderPegawaiView();
+        contentHtml = renderNavigation() + renderPegawaiView();
         break;
       case 'input':
-        contentHtml = renderInputPenghasilanView();
+        contentHtml = renderNavigation() + renderInputPenghasilanView();
         break;
       case 'hasil':
-        contentHtml = renderHasilRekonsiliasiView();
+        contentHtml = renderNavigation() + renderHasilRekonsiliasiView();
         break;
       case 'bpa2':
-        contentHtml = renderBpa2View();
+        contentHtml = renderNavigation() + renderBpa2View();
         break;
       case 'faq':
         contentHtml = renderFaqView();
@@ -85,14 +94,24 @@ function renderApp(): void {
     }
   }
 
+  const isUserLoggedIn = Boolean(appState.currentUser);
+
   appEl.innerHTML = `
     <div class="min-h-screen flex flex-col bg-slate-100 text-slate-900">
       ${renderHeader()}
-      ${renderNavigation()}
 
-      <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        ${contentHtml}
-      </main>
+      ${isUserLoggedIn ? `
+        <div class="flex-1 flex w-full max-w-7xl mx-auto">
+          ${renderSidebar()}
+          <main class="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-6">
+            ${contentHtml}
+          </main>
+        </div>
+      ` : `
+        <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          ${contentHtml}
+        </main>
+      `}
 
       <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 no-print mt-auto">
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -194,8 +213,25 @@ function attachEventListeners(): void {
           return;
         }
         appState.setActiveTab(target as any);
+        appState.toggleSidebarMobile(false);
       }
     });
+  });
+
+  // Mobile Sidebar Toggles
+  document.getElementById('btn-toggle-sidebar')?.addEventListener('click', () => {
+    appState.toggleSidebarMobile();
+  });
+  document.getElementById('btn-close-sidebar-mobile')?.addEventListener('click', () => {
+    appState.toggleSidebarMobile(false);
+  });
+  document.getElementById('sidebar-backdrop')?.addEventListener('click', () => {
+    appState.toggleSidebarMobile(false);
+  });
+
+  // Dashboard load dummy button
+  document.getElementById('btn-dashboard-load-dummy')?.addEventListener('click', () => {
+    appState.loadDummyTemplate();
   });
 
   // Google Sign-In Handler
@@ -249,11 +285,11 @@ function attachEventListeners(): void {
   document.getElementById('btn-menu-faq')?.addEventListener('click', handleOpenFaq);
   document.getElementById('btn-footer-faq')?.addEventListener('click', handleOpenFaq);
 
-  // Navigasi Kembali ke Kalkulator (Langkah 1: Data Pegawai)
-  const handleBackToCalc = () => appState.setActiveTab('pegawai');
-  document.getElementById('btn-header-logo-home')?.addEventListener('click', handleBackToCalc);
+  // Navigasi Kembali ke Dashboard
+  const handleBackToDashboard = () => appState.setActiveTab('dashboard');
+  document.getElementById('btn-header-logo-home')?.addEventListener('click', handleBackToDashboard);
   document.querySelectorAll('.btn-back-to-calc').forEach(btn => {
-    btn.addEventListener('click', handleBackToCalc);
+    btn.addEventListener('click', () => appState.setActiveTab('pegawai'));
   });
 
   // Actions Manajemen Data (Di Halaman Data Pegawai & Instansi)
@@ -330,7 +366,11 @@ function attachEventListeners(): void {
   });
 
   // --- TAB-SPECIFIC LISTENERS ---
-  if (appState.activeTab === 'pegawai') {
+  if (appState.activeTab === 'dashboard') {
+    // Dashboard tab-buttons handled globally
+  } else if (appState.activeTab === 'ter-bulanan') {
+    attachTerBulananListeners();
+  } else if (appState.activeTab === 'pegawai') {
     attachPegawaiListeners();
   } else if (appState.activeTab === 'input') {
     attachInputListeners();
@@ -343,6 +383,85 @@ function attachEventListeners(): void {
   } else if (appState.activeTab === 'admin') {
     attachAdminListeners();
   }
+}
+
+function attachTerBulananListeners(): void {
+  // Sync Pegawai text inputs (Nama & NIP)
+  const elNama = document.getElementById('ter-pegawai-nama') as HTMLInputElement;
+  elNama?.addEventListener('input', (e) => {
+    appState.updatePegawai('nama', (e.target as HTMLInputElement).value, false);
+  });
+
+  const elNip = document.getElementById('ter-pegawai-nip') as HTMLInputElement;
+  elNip?.addEventListener('input', (e) => {
+    appState.updatePegawai('nip', (e.target as HTMLInputElement).value, false);
+  });
+
+  // PTKP select dropdown
+  const elPtkp = document.getElementById('ter-pegawai-ptkp') as HTMLSelectElement;
+  elPtkp?.addEventListener('change', (e) => {
+    const val = (e.target as HTMLSelectElement).value;
+    appState.updatePegawai('status_ptkp', val, true);
+  });
+
+  // 4 Income Inputs (Bruto)
+  const bindCurrency = (id: string, compKey: 'penghasilan_1' | 'penghasilan_2' | 'penghasilan_3' | 'penghasilan_4') => {
+    const el = document.getElementById(id) as HTMLInputElement;
+    if (!el) return;
+
+    el.addEventListener('input', (e) => {
+      const target = e.target as HTMLInputElement;
+      const parsed = parseFormattedNumber(target.value);
+      appState.updateTerBulananKomponen(compKey, 'bruto', parsed, false);
+    });
+
+    el.addEventListener('blur', (e) => {
+      const target = e.target as HTMLInputElement;
+      const parsed = parseFormattedNumber(target.value);
+      appState.updateTerBulananKomponen(compKey, 'bruto', parsed, false);
+      appState.notify(); // Re-render to refresh table, rates, combined calculation, and comparison alerts
+    });
+
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        (e.target as HTMLInputElement).blur();
+      }
+    });
+  };
+
+  bindCurrency('ter-input-p1', 'penghasilan_1');
+  bindCurrency('ter-input-p2', 'penghasilan_2');
+  bindCurrency('ter-input-p3', 'penghasilan_3');
+  bindCurrency('ter-input-p4', 'penghasilan_4');
+
+  // Dummy Button
+  document.getElementById('btn-ter-dummy')?.addEventListener('click', () => {
+    appState.loadDummyTerBulanan();
+  });
+
+  // Reset Button
+  document.getElementById('btn-ter-reset')?.addEventListener('click', () => {
+    appState.clearTerBulanan();
+  });
+
+  // Print Button
+  document.getElementById('btn-ter-print')?.addEventListener('click', () => {
+    window.print();
+  });
+
+  // Load from Form 2 Button
+  document.getElementById('btn-ter-load-month')?.addEventListener('click', () => {
+    const selectEl = document.getElementById('ter-select-month-load') as HTMLSelectElement;
+    const monthNum = parseInt(selectEl?.value || '1', 10);
+    appState.loadMonthIntoTerBulanan(monthNum);
+  });
+
+  // Copy to Form 2 Button
+  document.getElementById('btn-ter-copy-month')?.addEventListener('click', () => {
+    const selectEl = document.getElementById('ter-select-month-copy') as HTMLSelectElement;
+    const monthNum = parseInt(selectEl?.value || '1', 10);
+    appState.copyTerBulananToMonth(monthNum);
+  });
 }
 
 function attachPegawaiListeners(): void {
@@ -397,7 +516,7 @@ function attachPegawaiListeners(): void {
     appState.updatePegawai('kategori_ter', val, false);
     const infoBanner = document.getElementById('ptkp-info-banner');
     if (infoBanner) {
-      const ptkpConf = PTKP_MAP[appState.dataset.pegawai.status_ptkp] || PTKP_MAP['TK/0'];
+      const ptkpConf = PTKP_MAP[appState.dataset.pegawai.status_ptkp as keyof typeof PTKP_MAP] || PTKP_MAP['TK/0'];
       infoBanner.innerHTML = `<strong>Nilai PTKP Tahunan:</strong> ${formatRupiah(ptkpConf.nilaiTahunan)} (${ptkpConf.deskripsi}). Kategori TER bulanan aktif: <strong>Kategori ${val}</strong>.`;
     }
   });

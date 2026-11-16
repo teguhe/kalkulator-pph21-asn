@@ -107,12 +107,13 @@ export function renderHasilRekonsiliasiView(): string {
           <div>
             <div class="flex items-center gap-2 mb-1">
               <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                Laporan Rekonsiliasi Tahunan
+                Form 3 (Perhitungan PPh 21 Setahun)
               </span>
               <span class="text-xs text-slate-500 font-mono">Tahun Pajak ${new Date().getFullYear()}</span>
             </div>
             <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-              Hasil Rekonsiliasi & Perhitungan Akhir Periode
+              Form 3: Hasil Rekonsiliasi &amp; Perhitungan Akhir Periode
+            </h2>
             </h2>
             <p class="text-xs text-slate-500 mt-0.5">
               Pegawai: <strong>${dataset.pegawai.nama || 'Tanpa Nama'}</strong> | Status PTKP: <strong>${dataset.pegawai.status_ptkp}</strong> (TER Kategori ${dataset.pegawai.kategori_ter})

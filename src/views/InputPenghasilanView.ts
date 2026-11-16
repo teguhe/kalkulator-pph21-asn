@@ -72,9 +72,9 @@ export function renderInputPenghasilanView(): string {
           <div>
             <div class="flex items-center gap-2 mb-1">
               <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-500/20 border border-emerald-400/30 text-emerald-300">
-                Bulan ${currentMonthData.bulan} / 12
+                Form 2 (Perhitungan PPh 21 Setahun) &bull; Bulan ${currentMonthData.bulan} / 12
               </span>
-              <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white">Masa Pajak ${currentMonthData.nama_bulan}</h2>
+              <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white">Form 2: Input Masa Pajak ${currentMonthData.nama_bulan}</h2>
             </div>
             <p class="text-xs text-slate-300">
               Input 4 komponen penghasilan bruto, pajak yang telah dipotong, dan NPWP bendahara pemotong.

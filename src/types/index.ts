@@ -1,4 +1,5 @@
-import { StatusPTKP, KategoriTER } from '../../taxConstants';
+import type { StatusPTKP, KategoriTER } from '../../taxConstants';
+export type { StatusPTKP, KategoriTER };
 
 export interface InstansiData {
   nama_instansi: string;
@@ -179,3 +180,44 @@ export interface NIKProcessSummary {
   lastProcessedAt: string;
   processedByEmails: string[];
 }
+
+// Navigasi & Tab
+export type TabType = 'dashboard' | 'ter-bulanan' | 'pegawai' | 'input' | 'hasil' | 'bpa2' | 'faq' | 'admin';
+
+// Tipe Data PPh 21 TER Bulanan
+export interface TerBulananKomponenItem {
+  id: string;
+  nama: string;
+  bruto: number;
+  keterangan: string;
+}
+
+export interface TerBulananInputState {
+  penghasilan_1: TerBulananKomponenItem;
+  penghasilan_2: TerBulananKomponenItem;
+  penghasilan_3: TerBulananKomponenItem;
+  penghasilan_4: TerBulananKomponenItem;
+}
+
+export interface HasilItemTerBulanan {
+  id: string;
+  nama: string;
+  keterangan: string;
+  bruto: number;
+  ter_rate: number; // Dalam persen (%)
+  pajak: number;
+  netto: number;
+}
+
+export interface HasilTerBulananPerhitungan {
+  items: HasilItemTerBulanan[];
+  total_bruto_terpisah: number;
+  total_pajak_terpisah: number;
+  total_netto_terpisah: number;
+  bruto_sebulan: number;
+  ter_rate_gabungan: number;
+  pajak_gabungan: number;
+  netto_gabungan: number;
+  selisih: number; // pajak_gabungan - total_pajak_terpisah (positif: kurang potong)
+}
+

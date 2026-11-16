@@ -89,7 +89,15 @@ export function renderBpa2View(): string {
       ` : ''}
 
       <!-- Toolbar (Cetak & Filter) - Hidden in Print -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs no-print">
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs no-print space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-slate-100">
+          <div>
+            <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 mb-0.5">
+              Form 4 (Perhitungan PPh 21 Setahun)
+            </div>
+            <h2 class="text-base font-bold text-slate-900">Form 4: Cetak Formulir Bukti Potong 1721-BPA2</h2>
+          </div>
+        </div>
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1">
             <div>

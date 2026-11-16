@@ -138,27 +138,36 @@ export function renderHeader(): string {
     <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs no-print">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16 gap-4">
-          <!-- Logo & Title -->
-          <button id="btn-header-logo-home" class="flex items-center gap-3 min-w-0 shrink text-left cursor-pointer">
-            <div class="w-10 h-10 rounded-xl bg-linear-to-tr from-emerald-600 via-teal-600 to-indigo-700 flex items-center justify-center text-white shadow-sm shrink-0">
+          <!-- Mobile Sidebar Toggle & Logo/Title -->
+          <div class="flex items-center gap-2 min-w-0 shrink">
+            <button id="btn-toggle-sidebar" class="md:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer" title="Buka Menu Sidebar">
               <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
-            </div>
-            <div class="min-w-0">
-              <div class="flex items-center gap-2">
-                <h1 class="text-sm sm:text-base lg:text-lg font-bold text-slate-900 tracking-tight whitespace-nowrap">
-                  Kalkulator PPh 21
-                </h1>
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
-                  ASN
-                </span>
+            </button>
+
+            <!-- Logo & Title -->
+            <button id="btn-header-logo-home" class="flex items-center gap-3 min-w-0 shrink text-left cursor-pointer">
+              <div class="w-10 h-10 rounded-xl bg-linear-to-tr from-emerald-600 via-teal-600 to-indigo-700 flex items-center justify-center text-white shadow-sm shrink-0">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
               </div>
-              <p class="text-[11px] sm:text-xs text-slate-500 hidden sm:block truncate">
-                PP 58/2023, PMK 168/2023 &bull; Generator 1721-BPA2
-              </p>
-            </div>
-          </button>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <h1 class="text-sm sm:text-base lg:text-lg font-bold text-slate-900 tracking-tight whitespace-nowrap">
+                    Kalkulator PPh 21
+                  </h1>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
+                    ASN
+                  </span>
+                </div>
+                <p class="text-[11px] sm:text-xs text-slate-500 hidden sm:block truncate">
+                  PP 58/2023, PMK 168/2023 &bull; Generator 1721-BPA2
+                </p>
+              </div>
+            </button>
+          </div>
 
           <!-- Action Buttons & User Info -->
           <div class="flex items-center gap-3 shrink-0">

@@ -1,14 +1,22 @@
-import { PPh21Dataset, RingkasanTahunan, UserProfile, QuotaState } from '../types';
+import { 
+  PPh21Dataset, 
+  RingkasanTahunan, 
+  UserProfile, 
+  QuotaState, 
+  TabType,
+  TerBulananInputState,
+  HasilTerBulananPerhitungan,
+  HasilItemTerBulanan
+} from '../types';
 import { createEmptyDataset, getSampleDummyDataset } from '../utils/defaults';
 import { calculatePPh21 } from '../utils/calculator';
 import { authService } from '../services/authService';
 import { quotaService } from '../services/quotaService';
 import { logService } from '../services/logService';
-import { PTKP_MAP } from '../../taxConstants';
+import { PTKP_MAP, getTERRate } from '../../taxConstants';
 
 const DATASET_STORAGE_KEY = 'pph21_saved_dataset';
-
-type TabType = 'pegawai' | 'input' | 'hasil' | 'bpa2' | 'faq' | 'admin';
+const TER_BULANAN_STORAGE_KEY = 'pph21_saved_ter_bulanan';
 
 export interface ToastMessage {
   id: string;
@@ -17,10 +25,21 @@ export interface ToastMessage {
   message: string;
 }
 
+function createDefaultTerBulananInput(): TerBulananInputState {
+  return {
+    penghasilan_1: { id: 'p1', nama: 'Gaji Plus Tunjangan Melekat', bruto: 0, keterangan: 'Bendahara Gaji' },
+    penghasilan_2: { id: 'p2', nama: 'Tunjangan Tambahan Penghasilan (TPP)', bruto: 0, keterangan: 'Bendahara TPP' },
+    penghasilan_3: { id: 'p3', nama: 'Penghasilan Lainnya 1 (Upah Pungut / Honor)', bruto: 0, keterangan: 'Bendahara OPD 1' },
+    penghasilan_4: { id: 'p4', nama: 'Penghasilan Lainnya 2 (Honorarium Kegiatan)', bruto: 0, keterangan: 'Bendahara OPD 2' },
+  };
+}
+
 class AppState {
   public dataset: PPh21Dataset;
   public calculation: RingkasanTahunan;
-  public activeTab: TabType = 'pegawai';
+  public activeTab: TabType = 'dashboard';
+  public isSidebarMobileOpen: boolean = false;
+  public terBulananInput: TerBulananInputState;
   public activeMonth: number = 1; // 1 to 12
   public currentUser: UserProfile | null = null;
   public quotaState: QuotaState;
@@ -34,6 +53,7 @@ class AppState {
 
   constructor() {
     this.dataset = this.loadInitialDataset();
+    this.terBulananInput = this.loadInitialTerBulananInput();
     this.currentUser = authService.getCurrentUser();
     this.quotaState = quotaService.getQuotaState();
     this.calculation = calculatePPh21(this.dataset.pegawai, this.dataset.periode_bulanan);
@@ -42,6 +62,9 @@ class AppState {
     authService.onAuthStateChanged((user) => {
       this.currentUser = user;
       this.quotaState = quotaService.getQuotaState();
+      if (user) {
+        this.activeTab = 'dashboard';
+      }
       this.notify();
     });
   }
@@ -58,12 +81,37 @@ class AppState {
     return createEmptyDataset();
   }
 
+  private loadInitialTerBulananInput(): TerBulananInputState {
+    try {
+      const stored = localStorage.getItem(TER_BULANAN_STORAGE_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch {
+      // Fallback
+    }
+    return createDefaultTerBulananInput();
+  }
+
   public saveDatasetToStorage(): void {
     try {
       localStorage.setItem(DATASET_STORAGE_KEY, JSON.stringify(this.dataset));
     } catch (e) {
       console.warn('Could not save dataset to localStorage', e);
     }
+  }
+
+  public saveTerBulananToStorage(): void {
+    try {
+      localStorage.setItem(TER_BULANAN_STORAGE_KEY, JSON.stringify(this.terBulananInput));
+    } catch (e) {
+      console.warn('Could not save ter bulanan to localStorage', e);
+    }
+  }
+
+  public toggleSidebarMobile(open?: boolean): void {
+    this.isSidebarMobileOpen = typeof open === 'boolean' ? open : !this.isSidebarMobileOpen;
+    this.notify();
   }
 
   public subscribe(listener: () => void): () => void {
@@ -280,6 +328,145 @@ class AppState {
     this.notify();
   }
 
+  // --- METODE PPh TER BULANAN ---
+  public updateTerBulananKomponen(
+    compKey: 'penghasilan_1' | 'penghasilan_2' | 'penghasilan_3' | 'penghasilan_4',
+    field: 'nama' | 'bruto' | 'keterangan',
+    value: any,
+    shouldNotify: boolean = false
+  ): void {
+    if (this.terBulananInput[compKey]) {
+      (this.terBulananInput[compKey] as any)[field] = value;
+      this.saveTerBulananToStorage();
+      if (shouldNotify) {
+        this.notify();
+      }
+    }
+  }
+
+  public getTerBulananCalculation(): HasilTerBulananPerhitungan {
+    const kat = this.dataset.pegawai.kategori_ter || 'A';
+    const keys: ('penghasilan_1' | 'penghasilan_2' | 'penghasilan_3' | 'penghasilan_4')[] = [
+      'penghasilan_1', 'penghasilan_2', 'penghasilan_3', 'penghasilan_4'
+    ];
+
+    let total_bruto_terpisah = 0;
+    let total_pajak_terpisah = 0;
+    let total_netto_terpisah = 0;
+
+    const items: HasilItemTerBulanan[] = keys.map(k => {
+      const comp = this.terBulananInput[k];
+      const bruto = Math.max(0, comp.bruto || 0);
+      const ter_rate = getTERRate(kat, bruto);
+      const pajak = Math.floor(bruto * (ter_rate / 100));
+      const netto = bruto - pajak;
+
+      total_bruto_terpisah += bruto;
+      total_pajak_terpisah += pajak;
+      total_netto_terpisah += netto;
+
+      return {
+        id: comp.id,
+        nama: comp.nama,
+        keterangan: comp.keterangan,
+        bruto,
+        ter_rate,
+        pajak,
+        netto
+      };
+    });
+
+    const bruto_sebulan = total_bruto_terpisah;
+    const ter_rate_gabungan = getTERRate(kat, bruto_sebulan);
+    const pajak_gabungan = Math.floor(bruto_sebulan * (ter_rate_gabungan / 100));
+    const netto_gabungan = bruto_sebulan - pajak_gabungan;
+    const selisih = pajak_gabungan - total_pajak_terpisah;
+
+    return {
+      items,
+      total_bruto_terpisah,
+      total_pajak_terpisah,
+      total_netto_terpisah,
+      bruto_sebulan,
+      ter_rate_gabungan,
+      pajak_gabungan,
+      netto_gabungan,
+      selisih
+    };
+  }
+
+  public copyTerBulananToMonth(monthNum: number): void {
+    const bulanIndex = monthNum - 1;
+    const b = this.dataset.periode_bulanan[bulanIndex];
+    if (!b) return;
+
+    const kat = this.dataset.pegawai.kategori_ter || 'A';
+    const calc = this.getTerBulananCalculation();
+
+    const keys: ('penghasilan_1' | 'penghasilan_2' | 'penghasilan_3' | 'penghasilan_4')[] = [
+      'penghasilan_1', 'penghasilan_2', 'penghasilan_3', 'penghasilan_4'
+    ];
+
+    keys.forEach((key, idx) => {
+      const src = this.terBulananInput[key];
+      const itemCalc = calc.items[idx];
+      b.komponen_penghasilan[key].label = src.nama;
+      b.komponen_penghasilan[key].bruto = src.bruto;
+      b.komponen_penghasilan[key].pajak_dipotong = itemCalc.pajak;
+    });
+
+    this.recalculateTax(false);
+    this.saveDatasetToStorage();
+    this.showToast('success', 'Tersalin ke Form 2', `Data 4 penghasilan berhasil disalin ke Bulan ${b.nama_bulan} pada Form 2.`);
+    this.notify();
+  }
+
+  public loadMonthIntoTerBulanan(monthNum: number): void {
+    const bulanIndex = monthNum - 1;
+    const b = this.dataset.periode_bulanan[bulanIndex];
+    if (!b) return;
+
+    const kp = b.komponen_penghasilan;
+    this.terBulananInput.penghasilan_1.bruto = kp.penghasilan_1.bruto || 0;
+    this.terBulananInput.penghasilan_1.nama = kp.penghasilan_1.label || 'Gaji Plus Tunjangan Melekat';
+    
+    this.terBulananInput.penghasilan_2.bruto = kp.penghasilan_2.bruto || 0;
+    this.terBulananInput.penghasilan_2.nama = kp.penghasilan_2.label || 'Tunjangan Tambahan Penghasilan (TPP)';
+
+    this.terBulananInput.penghasilan_3.bruto = kp.penghasilan_3.bruto || 0;
+    this.terBulananInput.penghasilan_3.nama = kp.penghasilan_3.label || 'Penghasilan Lainnya 1 (Upah Pungut / Honor)';
+
+    this.terBulananInput.penghasilan_4.bruto = kp.penghasilan_4.bruto || 0;
+    this.terBulananInput.penghasilan_4.nama = kp.penghasilan_4.label || 'Penghasilan Lainnya 2 (Honorarium Kegiatan)';
+
+    this.saveTerBulananToStorage();
+    this.showToast('info', 'Data Dimuat', `Data 4 penghasilan dari Bulan ${b.nama_bulan} berhasil dimuat ke PPh TER Bulanan.`);
+    this.notify();
+  }
+
+  public loadDummyTerBulanan(): void {
+    this.terBulananInput = {
+      penghasilan_1: { id: 'p1', nama: 'Gaji Plus Tunjangan Melekat', bruto: 5500000, keterangan: 'Bendahara Gaji' },
+      penghasilan_2: { id: 'p2', nama: 'Tunjangan Tambahan Penghasilan (TPP)', bruto: 6000000, keterangan: 'Bendahara TPP' },
+      penghasilan_3: { id: 'p3', nama: 'Penghasilan Lainnya 1 (Upah Pungut)', bruto: 1500000, keterangan: 'Bendahara Bapenda' },
+      penghasilan_4: { id: 'p4', nama: 'Penghasilan Lainnya 2 (Honorarium Pokja)', bruto: 1000000, keterangan: 'Bendahara Panitia Kegiatan' },
+    };
+    this.saveTerBulananToStorage();
+    this.showToast('success', 'Sampel TER Bulanan Dimuat', 'Data simulasi 4 komponen penghasilan ASN berhasil dimuat.');
+    this.notify();
+  }
+
+  public clearTerBulanan(): void {
+    this.terBulananInput.penghasilan_1.bruto = 0;
+    this.terBulananInput.penghasilan_2.bruto = 0;
+    this.terBulananInput.penghasilan_3.bruto = 0;
+    this.terBulananInput.penghasilan_4.bruto = 0;
+    this.saveTerBulananToStorage();
+    this.showToast('info', 'Input Dikosongkan', 'Seluruh nilai bruto pada perhitungan TER bulanan telah direset ke Rp 0.');
+    this.notify();
+  }
+
+
   // Tax calculation with Quota checks
   public recalculateTax(consumeQuotaCount: boolean = false): boolean {
     if (consumeQuotaCount) {
@@ -330,6 +517,13 @@ class AppState {
     }
 
     this.dataset = getSampleDummyDataset();
+    this.terBulananInput = {
+      penghasilan_1: { id: 'p1', nama: 'Gaji Plus Tunjangan Melekat', bruto: 5500000, keterangan: 'Bendahara Gaji' },
+      penghasilan_2: { id: 'p2', nama: 'Tunjangan Tambahan Penghasilan (TPP)', bruto: 6000000, keterangan: 'Bendahara TPP' },
+      penghasilan_3: { id: 'p3', nama: 'Penghasilan Lainnya 1 (Upah Pungut)', bruto: 1500000, keterangan: 'Bendahara Bapenda' },
+      penghasilan_4: { id: 'p4', nama: 'Penghasilan Lainnya 2 (Honorarium Pokja)', bruto: 1000000, keterangan: 'Bendahara Panitia Kegiatan' },
+    };
+    this.saveTerBulananToStorage();
     this.recalculateTax(false);
     this.saveDatasetToStorage();
     logService.recordLog('IMPORT', `Memuat data template dummy bawaan ASN: ${this.dataset.pegawai.nama} (NIK: ${this.dataset.pegawai.nik || '-'})`, {
@@ -351,6 +545,8 @@ class AppState {
     }
 
     this.dataset = createEmptyDataset();
+    this.terBulananInput = createDefaultTerBulananInput();
+    this.saveTerBulananToStorage();
     this.recalculateTax(false);
     this.saveDatasetToStorage();
     this.showToast('info', 'Data Dikosongkan', 'Semua isian telah direset ke data kosong baru.');

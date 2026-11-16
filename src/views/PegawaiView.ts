@@ -6,7 +6,7 @@ import { renderPangkatOptionsHtml } from '../utils/pangkatList';
 export function renderPegawaiView(): string {
   const { dataset } = appState;
   const p = dataset.pegawai;
-  const ptkpInfo = PTKP_MAP[p.status_ptkp] || PTKP_MAP['TK/0'];
+  const ptkpInfo = PTKP_MAP[p.status_ptkp as keyof typeof PTKP_MAP] || PTKP_MAP['TK/0'];
 
   const ptkpOptions = Object.keys(PTKP_MAP).map(key => {
     const item = PTKP_MAP[key as keyof typeof PTKP_MAP];
@@ -22,9 +22,9 @@ export function renderPegawaiView(): string {
           <div class="max-w-2xl">
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold mb-3">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              Profil Wajib Pajak & Pengaturan Instansi
+              Perhitungan PPh 21 Setahun &bull; Form 1
             </div>
-            <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white mb-2">Data Pegawai ASN & Parameter Pemotongan</h2>
+            <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white mb-2">Form 1: Data Pegawai ASN &amp; Parameter Pemotongan</h2>
             <p class="text-sm text-slate-300 leading-relaxed">
               Data identitas ini digunakan untuk menentukan kategori TER bulanan (A, B, atau C), batasan PTKP saat rekonsiliasi akhir periode/Desember, serta identitas resmi pemotong pada formulir bukti potong <strong>1721-BPA2</strong>.
             </p>

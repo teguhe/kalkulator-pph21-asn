@@ -105,7 +105,7 @@ export function validatePPh21Dataset(raw: unknown): ValidationResult {
 
   // Sanitize and normalize to fully typed PPh21Dataset
   const p = obj.pegawai;
-  const statusPTKP: StatusPTKP = VALID_PTKP.includes(p.status_ptkp) ? p.status_ptkp : 'TK/0';
+  const statusPTKP = (VALID_PTKP.includes(p.status_ptkp) ? p.status_ptkp : 'TK/0') as StatusPTKP;
   const expectedTER = PTKP_MAP[statusPTKP].kategoriTER;
   const kategoriTER: KategoriTER = (p.kategori_ter && VALID_TER.includes(p.kategori_ter)) ? p.kategori_ter : expectedTER;
 
