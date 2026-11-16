@@ -131,12 +131,6 @@ export function renderHeader(): string {
               </svg>
             </button>
 
-            <button id="btn-toggle-sidebar-desktop" class="hidden md:flex p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 cursor-pointer transition" title="${appState.isSidebarCollapsed ? 'Perluas Sidebar' : 'Ciutkan Sidebar'}">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
-              </svg>
-            </button>
-
             <!-- Logo & Title -->
             <button id="btn-header-logo-home" class="flex items-center gap-3 min-w-0 shrink text-left cursor-pointer">
               <div class="w-10 h-10 rounded-xl bg-linear-to-tr from-emerald-600 via-teal-600 to-indigo-700 flex items-center justify-center text-white shadow-sm shrink-0">

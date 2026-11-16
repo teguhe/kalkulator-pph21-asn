@@ -225,11 +225,8 @@ function attachEventListeners(): void {
     appState.toggleSidebarMobile(false);
   });
 
-  // Desktop Sidebar Collapse Toggles
+  // Desktop Sidebar Collapse Toggle
   document.getElementById('btn-toggle-sidebar-collapse')?.addEventListener('click', () => {
-    appState.toggleSidebarCollapse();
-  });
-  document.getElementById('btn-toggle-sidebar-desktop')?.addEventListener('click', () => {
     appState.toggleSidebarCollapse();
   });
 
