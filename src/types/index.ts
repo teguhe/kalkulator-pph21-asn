@@ -165,6 +165,14 @@ export interface QuotaState {
   limit: number;
   remaining: number;
   isUnlimited: boolean;
+  defaultLimit?: number;
+  bonusQuota?: number;
+}
+
+export interface UserBonusQuotaItem {
+  email: string;
+  bonus: number;
+  totalLimit: number;
 }
 
 export interface EmailProcessSummary {

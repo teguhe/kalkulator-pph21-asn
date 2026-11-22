@@ -101,14 +101,20 @@ export function renderAdminView(): string {
   // Admin Dashboard Content (Admin is logged in)
   const adminList = authService.getAdminList();
   const logs = logService.getLogs();
-  const quota = quotaService.getQuotaState();
+  const defaultLimit = quotaService.getDefaultDailyLimit();
+  const bonusList = quotaService.getBonusQuotaList();
   const emailSummaries = logService.getProcessSummaryByEmail();
   const nikSummaries = logService.getProcessSummaryByNIK();
+
+  const allKnownEmails = Array.from(new Set([
+    ...emailSummaries.map(s => s.email),
+    ...bonusList.map(b => b.email)
+  ])).filter(Boolean);
 
   // Admin list rows
   const adminRowsHtml = adminList.map(a => {
     return `
-      <tr class="border-b border-slate-100 text-xs">
+      <tr class="border-b border-slate-100 text-xs hover:bg-slate-50 transition">
         <td class="py-2.5 px-3 font-semibold text-slate-900">${a.email}</td>
         <td class="py-2.5 px-3">
           ${a.isSuperAdmin 
@@ -124,7 +130,7 @@ export function renderAdminView(): string {
     `;
   }).join('');
 
-  // 1. Rekap Per Email Rows
+  // 1. Rekap Per Email Rows (dengan info Kuota Harian & Tombol Aksi Cepat Bonus)
   const emailRecapRowsHtml = emailSummaries.map((s, idx) => {
     const isAdminEmail = authService.checkIsAdmin(s.email);
     const isSuper = authService.checkIsSuperAdmin(s.email);
@@ -133,6 +139,23 @@ export function renderAdminView(): string {
       : isAdminEmail 
       ? '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">Admin</span>'
       : '<span class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">Pegawai</span>';
+
+    const eff = quotaService.getUserEffectiveLimit(s.email);
+    let quotaBadge = '';
+    if (eff.isUnlimited) {
+      quotaBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">Unlimited (Admin)</span>';
+    } else if (eff.bonus > 0) {
+      quotaBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300" title="Batas Default ${eff.defaultLimit} + Bonus ${eff.bonus}">+${eff.bonus} (Total: ${eff.limit}x)</span>`;
+    } else {
+      quotaBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">${eff.defaultLimit}x / hari</span>`;
+    }
+
+    const actionButton = !eff.isUnlimited ? `
+      <button data-quick-bonus-email="${s.email}" data-quick-bonus-current="${eff.bonus}" class="btn-quick-bonus inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg transition cursor-pointer" title="Atur bonus proses untuk ${s.email}">
+        <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+        <span>${eff.bonus > 0 ? 'Ubah Bonus' : '+ Bonus'}</span>
+      </button>
+    ` : '<span class="text-slate-400 text-[11px]">-</span>';
 
     return `
       <tr class="border-b border-slate-100 text-xs hover:bg-slate-50 transition row-rekap-email" data-email-search="${s.email.toLowerCase()}">
@@ -143,6 +166,7 @@ export function renderAdminView(): string {
             ${roleBadge}
           </div>
         </td>
+        <td class="py-2.5 px-3 text-center whitespace-nowrap">${quotaBadge}</td>
         <td class="py-2.5 px-3 text-center font-bold text-emerald-700 bg-emerald-50/50">${s.totalCalculations}x</td>
         <td class="py-2.5 px-3 text-center text-slate-600 font-semibold">${s.totalActions} aksi</td>
         <td class="py-2.5 px-3">
@@ -151,11 +175,33 @@ export function renderAdminView(): string {
           </span>
         </td>
         <td class="py-2.5 px-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">${formatTimestampIndo(s.lastActive)}</td>
+        <td class="py-2.5 px-3 text-center">${actionButton}</td>
       </tr>
     `;
   }).join('');
 
-  // 2. Rekap Per NIK Rows
+  // 2. Bonus Quota Rows HTML
+  const bonusRowsHtml = bonusList.map(b => {
+    return `
+      <tr class="border-b border-slate-100 text-xs hover:bg-slate-50 transition">
+        <td class="py-2.5 px-3 font-semibold text-slate-900">${b.email}</td>
+        <td class="py-2.5 px-3 text-center">
+          <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+            +${b.bonus} proses
+          </span>
+        </td>
+        <td class="py-2.5 px-3 text-center font-mono font-bold text-emerald-700">
+          ${b.totalLimit}x / hari
+        </td>
+        <td class="py-2.5 px-3 text-right space-x-2">
+          <button data-reset-email-quota="${b.email}" class="btn-reset-email-quota text-slate-600 hover:text-slate-800 font-semibold text-[11px] cursor-pointer" title="Reset hitungan terpakai hari ini">Reset Hari Ini</button>
+          <button data-remove-bonus="${b.email}" class="btn-remove-bonus text-rose-600 hover:text-rose-800 font-semibold text-[11px] cursor-pointer">Hapus</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // 3. Rekap Per NIK Rows
   const nikRecapRowsHtml = nikSummaries.map((s, idx) => {
     const emailsBadge = s.processedByEmails.map(em => 
       `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-700 border border-slate-200 mr-1 mb-1">${em}</span>`
@@ -179,7 +225,7 @@ export function renderAdminView(): string {
     `;
   }).join('');
 
-  // 3. Raw Log Rows
+  // 4. Raw Log Rows
   const logRowsHtml = logs.slice(0, 50).map(l => {
     const badgeColor = l.type === 'CALCULATE' ? 'bg-blue-100 text-blue-800'
       : l.type === 'LOGIN' ? 'bg-emerald-100 text-emerald-800'
@@ -208,7 +254,7 @@ export function renderAdminView(): string {
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               Panel Kontrol Administrator
             </div>
-            <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white">Dashboard Admin & Rekapitulasi Proses</h2>
+            <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white">Dashboard Admin &amp; Rekapitulasi Proses</h2>
             <p class="text-xs sm:text-sm text-slate-300">
               Login Aktif: <strong>${currentUser?.email || '-'}</strong> (${currentUser?.isSuperAdmin ? 'Super Administrator' : 'Administrator'})
             </p>
@@ -222,10 +268,14 @@ export function renderAdminView(): string {
         </div>
 
         <!-- Metric Stat Cards -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3.5 mt-6 pt-6 border-t border-slate-800">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 mt-6 pt-6 border-t border-slate-800">
           <div class="bg-white/5 border border-white/10 rounded-xl p-3">
-            <div class="text-[10px] font-semibold text-slate-400 uppercase">Kuota Pengguna</div>
-            <div class="text-base sm:text-lg font-bold text-white font-mono mt-1">${quota.isUnlimited ? 'Unlimited' : `${quota.remaining} tersisa`}</div>
+            <div class="text-[10px] font-semibold text-slate-400 uppercase">Max Default Harian</div>
+            <div class="text-base sm:text-lg font-bold text-white font-mono mt-1">${defaultLimit}x / hari</div>
+          </div>
+          <div class="bg-white/5 border border-white/10 rounded-xl p-3">
+            <div class="text-[10px] font-semibold text-slate-400 uppercase">Bonus Akun Aktif</div>
+            <div class="text-base sm:text-lg font-bold text-amber-400 font-mono mt-1">${bonusList.length} Akun</div>
           </div>
           <div class="bg-white/5 border border-white/10 rounded-xl p-3">
             <div class="text-[10px] font-semibold text-slate-400 uppercase">Akun Pemroses</div>
@@ -237,15 +287,11 @@ export function renderAdminView(): string {
           </div>
           <div class="bg-white/5 border border-white/10 rounded-xl p-3">
             <div class="text-[10px] font-semibold text-slate-400 uppercase">Total Akun Admin</div>
-            <div class="text-base sm:text-lg font-bold text-amber-400 font-mono mt-1">${adminList.length} Akun</div>
+            <div class="text-base sm:text-lg font-bold text-purple-400 font-mono mt-1">${adminList.length} Akun</div>
           </div>
           <div class="bg-white/5 border border-white/10 rounded-xl p-3">
             <div class="text-[10px] font-semibold text-slate-400 uppercase">Total Aktivitas</div>
             <div class="text-base sm:text-lg font-bold text-blue-400 font-mono mt-1">${logs.length} Log</div>
-          </div>
-          <div class="bg-white/5 border border-white/10 rounded-xl p-3">
-            <div class="text-[10px] font-semibold text-slate-400 uppercase">Koneksi Backend</div>
-            <div class="text-base sm:text-lg font-bold text-teal-400 font-mono mt-1">${firebaseConfig?.projectId ? 'Firebase' : 'Local Storage'}</div>
           </div>
         </div>
       </div>
@@ -261,7 +307,7 @@ export function renderAdminView(): string {
             </div>
             <div>
               <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Rekapitulasi Proses Berdasarkan Email Pengguna</h3>
-              <p class="text-xs text-slate-500">Mencatat aktivitas, jumlah perhitungan pajak, dan NIK pegawai yang diproses oleh setiap akun</p>
+              <p class="text-xs text-slate-500">Mencatat aktivitas, jumlah perhitungan pajak, batas kuota, dan NIK pegawai yang diproses</p>
             </div>
           </div>
           <div class="w-full sm:w-64">
@@ -271,19 +317,21 @@ export function renderAdminView(): string {
         </div>
 
         <div class="border border-slate-200 rounded-xl overflow-hidden shadow-xs overflow-x-auto">
-          <table class="w-full text-left min-w-[700px]">
+          <table class="w-full text-left min-w-[750px]">
             <thead class="bg-slate-50 text-[10px] text-slate-500 uppercase border-b border-slate-200">
               <tr>
                 <th class="py-2.5 px-3 text-center w-12">No</th>
                 <th class="py-2.5 px-3">Email Pengguna (Google)</th>
+                <th class="py-2.5 px-3 text-center">Batas Kuota</th>
                 <th class="py-2.5 px-3 text-center">Hitung PPh 21</th>
                 <th class="py-2.5 px-3 text-center">Total Aksi</th>
                 <th class="py-2.5 px-3">Pegawai / NIK Diproses</th>
                 <th class="py-2.5 px-3">Aktivitas Terakhir</th>
+                <th class="py-2.5 px-3 text-center">Atur Kuota</th>
               </tr>
             </thead>
             <tbody id="tbody-rekap-email" class="divide-y divide-slate-100">
-              ${emailRecapRowsHtml.length > 0 ? emailRecapRowsHtml : '<tr><td colspan="6" class="p-6 text-center text-xs text-slate-400">Belum ada aktivitas proses per email yang tercatat.</td></tr>'}
+              ${emailRecapRowsHtml.length > 0 ? emailRecapRowsHtml : '<tr><td colspan="8" class="p-6 text-center text-xs text-slate-400">Belum ada aktivitas proses per email yang tercatat.</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -331,10 +379,148 @@ export function renderAdminView(): string {
         </div>
       </div>
 
-      <!-- BAGIAN 3: MANAJEMEN SISTEM & LOG AKTIVITAS -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Left: Manajemen Admin & Kuota (1 col) -->
+      <!-- BAGIAN 3: PENGATURAN KUOTA PROSES & HAK AKSES -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- KOLOM KIRI: MANAJEMEN KUOTA PROSES (DEFAULT & BONUS) -->
         <div class="space-y-6">
+          
+          <!-- 1. Pengaturan Max Proses Default Harian -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <div>
+                  <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Batas Max Proses Default Harian</h3>
+                  <p class="text-[11px] text-slate-500">Kuota dasar harian untuk seluruh akun pengguna terdaftar</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-emerald-50 text-emerald-800 border border-emerald-200">
+                Aktif: ${defaultLimit}x / hari
+              </span>
+            </div>
+
+            <form id="form-default-quota-limit" class="space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                  Jumlah Max Proses Default (per hari per akun)
+                </label>
+                <div class="flex gap-2">
+                  <div class="relative flex-1">
+                    <input type="number" id="input-default-daily-limit" min="1" max="1000" value="${defaultLimit}" required 
+                      class="w-full px-3 py-2 text-xs font-mono font-bold border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500" />
+                    <span class="absolute right-3 top-2 text-[11px] font-semibold text-slate-400">proses / hari</span>
+                  </div>
+                  <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer shrink-0">
+                    Simpan Default
+                  </button>
+                  <button type="button" id="btn-reset-default-limit" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0" title="Kembalikan batas default ke nilai standar 25 proses">
+                    Reset Standar (25)
+                  </button>
+                </div>
+              </div>
+              <p class="text-[11px] text-slate-500 leading-relaxed">
+                Pengguna yang masuk via Google akan otomatis menerima kuota dasar sebanyak <strong>${defaultLimit} proses per hari</strong>. Kuota akan tereset otomatis setiap hari.
+              </p>
+            </form>
+          </div>
+
+          <!-- 2. Pengaturan Bonus Proses Per Akun -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs" id="card-bonus-quota">
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div>
+                  <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Bonus Proses Per Akun</h3>
+                  <p class="text-[11px] text-slate-500">Berikan tambahan kuota harian khusus untuk akun tertentu</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-amber-50 text-amber-800 border border-amber-200">
+                ${bonusList.length} Akun Berbonus
+              </span>
+            </div>
+
+            <!-- Form Tambah/Ubah Bonus -->
+            <form id="form-bonus-quota" class="space-y-3 mb-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div class="sm:col-span-2">
+                  <label class="block text-[11px] font-semibold text-slate-700 mb-1">Email Akun Pengguna</label>
+                  <input type="email" id="input-bonus-email" placeholder="contoh.pegawai@gmail.com" list="datalist-all-emails" required 
+                    class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                  <datalist id="datalist-all-emails">
+                    ${allKnownEmails.map(em => `<option value="${em}">`).join('')}
+                  </datalist>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-700 mb-1">Bonus (+Proses)</label>
+                  <input type="number" id="input-bonus-amount" min="1" max="5000" placeholder="50" required 
+                    class="w-full px-3 py-1.5 text-xs font-mono font-bold border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 bg-white" />
+                </div>
+              </div>
+              <div class="flex items-center justify-between pt-1">
+                <span class="text-[11px] text-slate-500">
+                  Total kuota akun ini: <strong class="text-slate-800">${defaultLimit} (Default) + Bonus</strong>
+                </span>
+                <button type="submit" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer">
+                  Terapkan Bonus
+                </button>
+              </div>
+            </form>
+
+            <!-- Tabel Daftar Akun dengan Bonus Khusus -->
+            <div class="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+              <table class="w-full text-left">
+                <thead class="bg-slate-50 text-[10px] text-slate-500 uppercase border-b border-slate-200">
+                  <tr>
+                    <th class="py-2 px-3">Email Pengguna</th>
+                    <th class="py-2 px-3 text-center">Bonus (+X)</th>
+                    <th class="py-2 px-3 text-center">Total Kuota</th>
+                    <th class="py-2 px-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${bonusRowsHtml.length > 0 ? bonusRowsHtml : `
+                    <tr>
+                      <td colspan="4" class="p-4 text-center text-xs text-slate-400">
+                        Belum ada akun yang diberikan bonus proses khusus.
+                      </td>
+                    </tr>
+                  `}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 3. Tindakan Reset Kuota Sistem -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
+            <div class="flex items-center gap-2 pb-3 mb-3 border-b border-slate-100">
+              <svg class="w-5 h-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Pemulihan / Reset Kuota Sistem</h3>
+            </div>
+            <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+              Gunakan opsi ini jika ingin mereset pemakaian kuota sebelum waktu pergantian hari otomatis.
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <button id="btn-admin-reset-quota-today" class="px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 transition flex items-center justify-between cursor-pointer">
+                <span>Reset Akun Saya Hari Ini</span>
+                <span class="text-emerald-600">&circlearrowright;</span>
+              </button>
+              <button id="btn-admin-reset-all-quotas" class="px-3 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-semibold text-rose-700 transition flex items-center justify-between cursor-pointer">
+                <span>Reset Seluruh Kuota Sistem</span>
+                <span class="text-rose-600">&times;</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- KOLOM KANAN: KELOLA DAFTAR ADMIN & KONFIGURASI FIREBASE -->
+        <div class="space-y-6">
+          
           <!-- Manajemen Email Admin -->
           <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
             <div class="flex items-center gap-2 pb-3 mb-3 border-b border-slate-100">
@@ -347,12 +533,12 @@ export function renderAdminView(): string {
               <input type="email" id="input-new-admin-email" placeholder="admin.baru@gmail.com" required 
                 class="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500" />
               <button type="submit" class="px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition shrink-0 cursor-pointer">
-                Tambah
+                Tambah Admin
               </button>
             </form>
 
             <!-- Tabel Admin -->
-            <div class="border border-slate-200 rounded-lg overflow-hidden">
+            <div class="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
               <table class="w-full text-left">
                 <thead class="bg-slate-50 text-[10px] text-slate-500 uppercase border-b border-slate-200">
                   <tr>
@@ -361,33 +547,10 @@ export function renderAdminView(): string {
                     <th class="py-2 px-3 text-right">Aksi</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody class="divide-y divide-slate-100">
                   ${adminRowsHtml}
                 </tbody>
               </table>
-            </div>
-          </div>
-
-          <!-- Pengaturan Kuota & Reset -->
-          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
-            <div class="flex items-center gap-2 pb-3 mb-3 border-b border-slate-100">
-              <svg class="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Manajemen Kuota Harian</h3>
-            </div>
-
-            <p class="text-xs text-slate-600 mb-4 leading-relaxed">
-              Aturan Kuota: Semua pengguna wajib login Google (25x/hari) | Admin = Unlimited. Mode tamu dinonaktifkan.
-            </p>
-
-            <div class="space-y-2">
-              <button id="btn-admin-reset-quota-today" class="w-full text-left px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 transition flex items-center justify-between cursor-pointer">
-                <span>Reset Kuota Hari Ini (Akun Ini)</span>
-                <span class="text-emerald-600">&circlearrowright;</span>
-              </button>
-              <button id="btn-admin-reset-all-quotas" class="w-full text-left px-3 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-semibold text-rose-700 transition flex items-center justify-between cursor-pointer">
-                <span>Reset Seluruh Kuota Sistem</span>
-                <span>&times;</span>
-              </button>
             </div>
           </div>
 
@@ -433,55 +596,55 @@ export function renderAdminView(): string {
               </button>
             </form>
           </div>
+
         </div>
 
-        <!-- Right: Log Aktivitas Sistem (2 cols) -->
-        <div class="lg:col-span-2 space-y-6">
-          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 mb-4 border-b border-slate-100">
-              <div>
-                <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Catatan Log Aktivitas Sistem Lengkap</h3>
-                <p class="text-xs text-slate-500">Mencatat riwayat login, proses perhitungan pajak, serta impor/ekspor data</p>
-              </div>
+      </div>
 
-              <!-- Filter controls -->
-              <div class="flex items-center gap-2">
-                <select id="select-log-filter" class="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white outline-none cursor-pointer">
-                  <option value="ALL">Semua Tipe Log</option>
-                  <option value="CALCULATE">Perhitungan Pajak</option>
-                  <option value="LOGIN">Login Akun</option>
-                  <option value="IMPORT">Impor Data</option>
-                  <option value="EXPORT">Ekspor Data</option>
-                </select>
-                <button id="btn-admin-clear-logs" class="px-2.5 py-1.5 text-xs text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition font-medium cursor-pointer">
-                  Hapus Log
-                </button>
-              </div>
-            </div>
-
-            <!-- Search log input -->
-            <div class="mb-4">
-              <input type="text" id="input-search-log" placeholder="Cari dalam log (email, nama pegawai, dll)..." 
-                class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500" />
-            </div>
-
-            <!-- Log Table -->
-            <div class="border border-slate-200 rounded-xl overflow-hidden shadow-xs max-h-[500px] overflow-y-auto">
-              <table class="w-full text-left">
-                <thead class="bg-slate-50 text-[10px] text-slate-500 uppercase border-b border-slate-200 sticky top-0">
-                  <tr>
-                    <th class="py-2.5 px-3">Waktu (WIB)</th>
-                    <th class="py-2.5 px-3">Tipe</th>
-                    <th class="py-2.5 px-3">Pengguna</th>
-                    <th class="py-2.5 px-3">Keterangan / Detail Aktivitas</th>
-                  </tr>
-                </thead>
-                <tbody id="admin-log-tbody" class="divide-y divide-slate-100">
-                  ${logRowsHtml.length > 0 ? logRowsHtml : '<tr><td colspan="4" class="p-6 text-center text-xs text-slate-400">Belum ada catatan aktivitas sistem.</td></tr>'}
-                </tbody>
-              </table>
-            </div>
+      <!-- BAGIAN 4: CATATAN LOG AKTIVITAS SISTEM LENGKAP -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 mb-4 border-b border-slate-100">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Catatan Log Aktivitas Sistem Lengkap</h3>
+            <p class="text-xs text-slate-500">Mencatat riwayat login, proses perhitungan pajak, serta impor/ekspor data</p>
           </div>
+
+          <!-- Filter controls -->
+          <div class="flex items-center gap-2">
+            <select id="select-log-filter" class="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white outline-none cursor-pointer">
+              <option value="ALL">Semua Tipe Log</option>
+              <option value="CALCULATE">Perhitungan Pajak</option>
+              <option value="LOGIN">Login Akun</option>
+              <option value="IMPORT">Impor Data</option>
+              <option value="EXPORT">Ekspor Data</option>
+            </select>
+            <button id="btn-admin-clear-logs" class="px-2.5 py-1.5 text-xs text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition font-medium cursor-pointer">
+              Hapus Log
+            </button>
+          </div>
+        </div>
+
+        <!-- Search log input -->
+        <div class="mb-4">
+          <input type="text" id="input-search-log" placeholder="Cari dalam log (email, nama pegawai, dll)..." 
+            class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+
+        <!-- Log Table -->
+        <div class="border border-slate-200 rounded-xl overflow-hidden shadow-xs max-h-[500px] overflow-y-auto">
+          <table class="w-full text-left">
+            <thead class="bg-slate-50 text-[10px] text-slate-500 uppercase border-b border-slate-200 sticky top-0">
+              <tr>
+                <th class="py-2.5 px-3">Waktu (WIB)</th>
+                <th class="py-2.5 px-3">Tipe</th>
+                <th class="py-2.5 px-3">Pengguna</th>
+                <th class="py-2.5 px-3">Keterangan / Detail Aktivitas</th>
+              </tr>
+            </thead>
+            <tbody id="admin-log-tbody" class="divide-y divide-slate-100">
+              ${logRowsHtml.length > 0 ? logRowsHtml : '<tr><td colspan="4" class="p-6 text-center text-xs text-slate-400">Belum ada catatan aktivitas sistem.</td></tr>'}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

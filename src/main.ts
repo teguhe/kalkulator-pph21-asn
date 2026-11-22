@@ -5,7 +5,7 @@ import { quotaService } from './services/quotaService';
 import { logService } from './services/logService';
 import { validatePPh21Dataset } from './utils/validator';
 import { parseFormattedNumber, formatNumber, formatRupiah } from './utils/formatters';
-import { PTKP_MAP } from '../taxConstants';
+import { PTKP_MAP, QUOTA_CONFIG } from '../taxConstants';
 
 import { renderHeader } from './components/Header';
 import { renderNavigation } from './components/Navigation';
@@ -937,6 +937,108 @@ function attachAdminListeners(): void {
     quotaService.resetAllQuotas();
     appState.showToast('success', 'Seluruh Kuota Direset', 'Semua counter kuota harian telah dibersihkan.');
     appState.notify();
+  });
+
+  // Form Default Daily Quota Limit
+  const formDefaultQuota = document.getElementById('form-default-quota-limit') as HTMLFormElement;
+  formDefaultQuota?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('input-default-daily-limit') as HTMLInputElement;
+    const val = parseInt(input.value, 10);
+    if (!isNaN(val) && val >= 1) {
+      quotaService.setDefaultDailyLimit(val);
+      logService.recordLog('LOGIN', `Admin memperbarui batas max proses default menjadi ${val}x/hari`);
+      appState.showToast('success', 'Batas Default Disimpan', `Batas max proses default sekarang ${val}x per hari.`);
+      appState.notify();
+    } else {
+      appState.showToast('warning', 'Nilai Tidak Valid', 'Masukkan angka minimal 1.');
+    }
+  });
+
+  const btnResetDefaultLimit = document.getElementById('btn-reset-default-limit');
+  btnResetDefaultLimit?.addEventListener('click', () => {
+    quotaService.resetDefaultDailyLimit();
+    logService.recordLog('LOGIN', `Admin mereset batas max proses default ke standar (${QUOTA_CONFIG.USER_DAILY_LIMIT}x/hari)`);
+    appState.showToast('info', 'Batas Default Direset', `Batas max proses default dikembalikan ke nilai standar (${QUOTA_CONFIG.USER_DAILY_LIMIT}x/hari).`);
+    appState.notify();
+  });
+
+  // Form Bonus Quota Per Account
+  const formBonusQuota = document.getElementById('form-bonus-quota') as HTMLFormElement;
+  formBonusQuota?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const inputEmail = document.getElementById('input-bonus-email') as HTMLInputElement;
+    const inputBonus = document.getElementById('input-bonus-amount') as HTMLInputElement;
+    const email = inputEmail.value.trim().toLowerCase();
+    const bonus = parseInt(inputBonus.value, 10);
+
+    if (!email || isNaN(bonus) || bonus < 1) {
+      appState.showToast('warning', 'Data Tidak Lengkap', 'Masukkan email dan nilai bonus minimal 1 proses.');
+      return;
+    }
+
+    if (authService.checkIsAdmin(email)) {
+      appState.showToast('warning', 'Akun Administrator', `Email ${email} adalah akun admin yang sudah memiliki kuota Unlimited.`);
+      return;
+    }
+
+    const ok = quotaService.setBonusQuota(email, bonus);
+    if (ok) {
+      logService.recordLog('LOGIN', `Admin memberikan bonus proses untuk ${email}: +${bonus} proses`);
+      const def = quotaService.getDefaultDailyLimit();
+      appState.showToast('success', 'Bonus Diterapkan', `Akun ${email} mendapatkan bonus +${bonus} proses (Total kuota: ${def + bonus}x/hari).`);
+      inputEmail.value = '';
+      inputBonus.value = '';
+      appState.notify();
+    }
+  });
+
+  // Buttons Remove Bonus
+  document.querySelectorAll('.btn-remove-bonus').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const email = (e.currentTarget as HTMLElement).dataset.removeBonus;
+      if (email) {
+        quotaService.removeBonusQuota(email);
+        logService.recordLog('LOGIN', `Admin menghapus bonus proses untuk ${email}`);
+        appState.showToast('info', 'Bonus Dihapus', `Bonus proses khusus untuk ${email} telah dicabut.`);
+        appState.notify();
+      }
+    });
+  });
+
+  // Buttons Reset Single Account Quota Today
+  document.querySelectorAll('.btn-reset-email-quota').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const email = (e.currentTarget as HTMLElement).dataset.resetEmailQuota;
+      if (email) {
+        quotaService.resetQuotaForEmail(email);
+        appState.showToast('success', 'Kuota Direset', `Pemakaian kuota hari ini untuk ${email} telah dikembalikan penuh.`);
+        appState.notify();
+      }
+    });
+  });
+
+  // Quick Bonus Buttons in Rekap Email Table
+  document.querySelectorAll('.btn-quick-bonus').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const target = e.currentTarget as HTMLElement;
+      const email = target.dataset.quickBonusEmail || '';
+      const currentBonus = target.dataset.quickBonusCurrent || '';
+
+      const inputEmail = document.getElementById('input-bonus-email') as HTMLInputElement;
+      const inputBonus = document.getElementById('input-bonus-amount') as HTMLInputElement;
+      const cardBonus = document.getElementById('card-bonus-quota');
+
+      if (inputEmail) inputEmail.value = email;
+      if (inputBonus) {
+        inputBonus.value = currentBonus && currentBonus !== '0' ? currentBonus : '50';
+      }
+
+      if (cardBonus) {
+        cardBonus.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      inputBonus?.focus();
+    });
   });
 
   // Firebase config
