@@ -533,7 +533,7 @@ export function renderFaqView(): string {
         <p>Untuk menjaga kestabilan sistem backend dan mencegah automated scraping, aplikasi menerapkan kebijakan autentikasi pengguna:</p>
         <ul class="list-disc pl-5 space-y-1.5 text-xs sm:text-sm text-slate-700 my-2">
           <li><strong>Wajib Login Google:</strong> Semua pengguna wajib masuk menggunakan Akun Google resmi terlebih dahulu sebelum menggunakan fitur perhitungan dan cetak bukti potong.</li>
-          <li><strong>Kuota Pengguna:</strong> Setiap akun Google diberikan kuota <strong>25x perhitungan per hari</strong> secara cuma-cuma yang diperbarui otomatis setiap pergantian hari.</li>
+          <li><strong>Kuota Pengguna:</strong> Setiap akun Google diberikan kuota perhitungan harian secara cuma-cuma yang diperbarui otomatis setiap pergantian hari (dapat disesuaikan oleh Administrator).</li>
           <li><strong>Administrator:</strong> Memiliki kuota tanpa batas (Unlimited) serta akses ke panel pengawasan rekapitulasi proses di Dashboard Admin.</li>
         </ul>
       `

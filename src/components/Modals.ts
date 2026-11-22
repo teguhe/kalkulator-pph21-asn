@@ -60,7 +60,7 @@ export function renderModals(): string {
         </div>
 
         <p class="text-xs text-slate-600 mb-5 leading-relaxed">
-          Autentikasi resmi menggunakan Google Sign-In memberikan Anda <strong>kuota 25x perhitungan per hari</strong> secara cuma-cuma.
+          Silakan masuk menggunakan Akun Google untuk mengakses kalkulator dan pencetakan bukti potong PPh 21.
         </p>
 
         <!-- Google Login Action Button -->

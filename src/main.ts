@@ -40,7 +40,7 @@ function renderLoginGate(): string {
           Semua pengguna wajib masuk menggunakan Akun Google terlebih dahulu untuk menggunakan fitur kalkulator dan pencetakan BPA2.
         </p>
 
-        <div class="space-y-3 max-w-sm mx-auto mb-6">
+        <div class="space-y-3 max-w-sm mx-auto">
           <button id="btn-gate-google-login" class="w-full flex items-center justify-center gap-3 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-xs transition hover:shadow cursor-pointer">
             <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
               <path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -50,11 +50,6 @@ function renderLoginGate(): string {
             </svg>
             <span>Masuk dengan Akun Google</span>
           </button>
-        </div>
-
-        <div class="pt-6 border-t border-slate-100 text-xs text-slate-600 flex items-center justify-center gap-2">
-          <span class="text-emerald-600 font-bold">&check;</span>
-          <span>Setiap akun Google diberikan kuota 25x perhitungan per hari</span>
         </div>
       </div>
     </div>
@@ -260,7 +255,7 @@ function attachEventListeners(): void {
       if (user.isAdmin) {
         appState.showToast('success', 'Akses Administrator Terbuka', `Selamat datang, ${user.displayName || user.email} (Administrator).`);
       } else {
-        appState.showToast('success', 'Login Berhasil', `Selamat datang, ${user.displayName || user.email} (+25 Kuota Harian).`);
+        appState.showToast('success', 'Login Berhasil', `Selamat datang, ${user.displayName || user.email}.`);
       }
     } catch (err: any) {
       console.error('Google Sign-In Error:', err);

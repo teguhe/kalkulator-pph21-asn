@@ -460,7 +460,7 @@ class AppState {
     }
 
     if (!quotaService.canCalculate()) {
-      this.showToast('error', 'Batas Kuota Tercapai', 'Kuota perhitungan Anda hari ini telah habis (25x per hari).');
+      this.showToast('error', 'Batas Kuota Tercapai', `Kuota perhitungan Anda hari ini telah habis (${this.quotaState.limit}x per hari).`);
       return false;
     }
 
@@ -605,7 +605,7 @@ class AppState {
       }
 
       if (!quotaService.canCalculate()) {
-        this.showToast('error', 'Batas Kuota Tercapai', 'Kuota perhitungan Anda hari ini telah habis (25x per hari).');
+        this.showToast('error', 'Batas Kuota Tercapai', `Kuota perhitungan Anda hari ini telah habis (${this.quotaState.limit}x per hari).`);
         return false;
       }
       quotaService.consumeQuota();
