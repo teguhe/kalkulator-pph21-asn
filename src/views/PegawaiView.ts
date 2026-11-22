@@ -207,14 +207,17 @@ export function renderPegawaiView(): string {
         </div>
 
         <!-- Quick Navigation Card -->
-        <div class="bg-slate-900 text-white rounded-xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="bg-slate-900 text-white rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div class="max-w-2xl">
+            <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 mb-2">
+              Langkah 1 dari 4
+            </div>
             <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">Langkah Selanjutnya</h4>
             <p class="text-xs text-slate-300 leading-relaxed">
               Setelah identitas pegawai dan instansi terisi, lanjutkan ke menu <strong>Form 2: Input Penghasilan (12 Bulan)</strong> untuk mengisi 4 komponen penghasilan atau gunakan template dummy untuk melihat contoh nyata.
             </p>
           </div>
-          <button id="btn-goto-input-tab" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-sm transition shrink-0 cursor-pointer">
+          <button id="btn-goto-input-tab" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition shrink-0 cursor-pointer">
             <span>Buka Input Penghasilan (12 Bulan)</span>
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
           </button>

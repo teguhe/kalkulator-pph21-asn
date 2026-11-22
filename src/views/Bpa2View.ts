@@ -27,8 +27,11 @@ export function renderBpa2View(): string {
 
   const currentYear = new Date().getFullYear();
   const bulanAkhirStr = akhir ? String(akhir.bulan_akhir).padStart(2, '0') : '12';
+  const bulanMulaiStr = akhir ? String(akhir.bulan_mulai).padStart(2, '0') : '01';
   const kodeMasa = akhir ? akhir.kode_masa : '01 - 12';
-  const nomorBpa2 = `1.1-${bulanAkhirStr}.${String(currentYear).slice(-2)}-0000108`;
+  const periodePenghasilan = `${bulanMulaiStr}-${currentYear}-${bulanAkhirStr}-${currentYear}`;
+  const jenisPemotongan = (akhir && akhir.jumlah_bulan < 12) ? 'Kurang dari Setahun' : 'Setahun Penuh';
+  const nomorBpa2 = `2508${bulanAkhirStr}CD0`;
   const tanggalHariIni = formatDateIndo();
 
   // Values specific to the selected Akhir Periode
@@ -37,17 +40,24 @@ export function renderBpa2View(): string {
   const tppTotal = akhir ? (akhir.total_tpp_akumulasi || 0) : 0;
   const honor1Total = akhir ? (akhir.total_honor1_akumulasi || 0) : 0;
   const honor2Total = akhir ? (akhir.total_honor2_akumulasi || 0) : 0;
+  const penghasilanTetapTerpisah = tppTotal + honor1Total + honor2Total;
 
   const maxBiayaJabatan = akhir ? akhir.max_biaya_jabatan : 6000000;
   const biayaJabatan = akhir ? akhir.biaya_jabatan : Math.min(Math.floor(brutoTotal * 0.05), maxBiayaJabatan);
   const iuranPensiun = akhir ? akhir.iuran_pensiun : Math.floor(gajiTotal * ((p.persen_iuran_pensiun || 4.75) / 100));
   const totalPengurang = akhir ? akhir.total_pengurang : (biayaJabatan + iuranPensiun);
+  
+  // Section III Values matching PER-2/PJ/2024 (Rows 14 to 24)
   const penghasilanNeto = akhir ? akhir.penghasilan_neto : Math.max(0, brutoTotal - totalPengurang);
-  const ptkp = akhir ? akhir.ptkp : 67500000;
-  const pkp = akhir ? akhir.pkp : Math.max(0, Math.floor((penghasilanNeto - ptkp) / 1000) * 1000);
+  const penghasilanNetoSebelumnya = akhir ? (akhir.penghasilan_neto_sebelumnya || 0) : 0;
+  const jumlahPenghasilanNeto = akhir ? (akhir.jumlah_penghasilan_neto_setahun || (penghasilanNeto + penghasilanNetoSebelumnya)) : (penghasilanNeto + penghasilanNetoSebelumnya);
+  const ptkp = akhir ? akhir.ptkp : 54000000;
+  const pkp = akhir ? akhir.pkp : Math.max(0, Math.floor((jumlahPenghasilanNeto - ptkp) / 1000) * 1000);
   const pph21Setahun = akhir ? akhir.pph21_pasal17_setahun : calculation.total_pph21_terutang_setahun;
-  const pph21Sebelumnya = akhir ? akhir.pajak_terutang_sebelumnya : 0;
-  const pph21TerutangMasaAkhir = akhir ? akhir.pph21_terutang_bulan_terakhir : (pph21Setahun - pph21Sebelumnya);
+  const pph21DipotongSebelumnya = akhir ? (akhir.pph21_dipotong_sebelumnya || 0) : 0;
+  const pph21TerutangBuktiIni = akhir ? (akhir.pph21_terutang_bukti_ini ?? (pph21Setahun - pph21DipotongSebelumnya)) : pph21Setahun;
+  const pph21TelahDipotong = akhir ? akhir.pajak_terutang_sebelumnya : 0;
+  const pph21KurangLebihMasaAkhir = akhir ? akhir.pph21_terutang_bulan_terakhir : (pph21TerutangBuktiIni - pph21TelahDipotong);
 
   const isEmpty = !p.nama && brutoTotal === 0;
 
@@ -140,196 +150,295 @@ export function renderBpa2View(): string {
       </div>
 
       <!-- Printable BPA2 Container -->
-      <div id="bpa2-print-container" class="bg-white rounded-2xl border border-slate-300 shadow-md p-6 sm:p-10 max-w-4xl mx-auto text-slate-900 font-sans">
+      <div id="bpa2-print-container" class="bg-white rounded-2xl border border-slate-300 shadow-md p-6 sm:p-8 max-w-4xl mx-auto text-slate-900 font-sans">
         
-        <!-- HEADER FORMULIR -->
-        <div class="border-2 border-slate-900 p-3 mb-4">
-          <div class="grid grid-cols-12 gap-2 items-center text-center">
-            <div class="col-span-3 border-r-2 border-slate-900 pr-2 text-left">
-              <div class="text-[10px] font-bold uppercase leading-tight text-slate-800">KEMENTERIAN KEUANGAN RI</div>
-              <div class="text-[10px] font-bold uppercase leading-tight text-slate-800">DIREKTORAT JENDERAL PAJAK</div>
-              <div class="text-[8px] text-slate-600 mt-1">PER-2/PJ/2024 & PMK 168/2023</div>
-            </div>
-            <div class="col-span-6 px-2">
-              <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-tight text-slate-950">
-                BUKTI PEMOTONGAN PAJAK PENGHASILAN PASAL 21
-              </h2>
-              <div class="text-[11px] font-bold uppercase text-slate-800">
-                BAGI PEGAWAI TETAP / APARATUR SIPIL NEGARA
+        <!-- HEADER FORMULIR BPA2 SESUAI PER-2/PJ/2024 -->
+        <div class="border-2 border-slate-900 mb-3 text-slate-950">
+          <div class="p-3 grid grid-cols-12 gap-2 items-center border-b-2 border-slate-900 bg-white">
+            <div class="col-span-8 sm:col-span-9 flex items-center gap-3 text-left">
+              <div class="w-12 h-12 bg-linear-to-br from-amber-400 to-amber-500 rounded-lg flex items-center justify-center font-extrabold text-slate-950 text-xs shadow-xs shrink-0 border border-slate-900">
+                DJP
               </div>
-              <div class="text-[10px] font-mono text-slate-600 mt-0.5">
-                Masa Pajak: <strong>${kodeMasa}</strong> / Tahun Pajak: <strong>${currentYear}</strong>
+              <div>
+                <div class="text-[10px] font-bold uppercase leading-tight text-slate-800">KEMENTERIAN KEUANGAN REPUBLIK INDONESIA</div>
+                <div class="text-[10px] font-bold uppercase leading-tight text-slate-800">DIREKTORAT JENDERAL PAJAK</div>
+                <h2 class="text-[11px] sm:text-xs font-black uppercase tracking-tight text-slate-950 mt-0.5 leading-snug">
+                  BUKTI PEMOTONGAN PAJAK PENGHASILAN PASAL 21 BAGI PEGAWAI NEGERI SIPIL ATAU ANGGOTA TENTARA NASIONAL INDONESIA ATAU ANGGOTA KEPOLISIAN REPUBLIK INDONESIA ATAU PEJABAT NEGARA ATAU PENSIUNANNYA
+                </h2>
               </div>
             </div>
-            <div class="col-span-3 border-l-2 border-slate-900 pl-2 text-right">
-              <div class="text-sm font-black text-slate-950 font-mono tracking-wider">FORMULIR 1721-BPA2</div>
-              <div class="text-[8px] text-slate-600 leading-tight mt-1">Lembar ke-1 : Untuk Penerima Penghasilan</div>
-              <div class="text-[8px] text-slate-600 leading-tight">Lembar ke-2 : Untuk Pemotong Pajak</div>
+            <div class="col-span-4 sm:col-span-3 text-right flex flex-col items-end justify-center">
+              <div class="inline-block bg-amber-300 border-2 border-slate-950 px-3.5 py-1 font-black text-lg sm:text-xl font-mono text-slate-950 tracking-wider shadow-xs">
+                BPA2
+              </div>
+              <div class="text-[8px] text-slate-600 mt-0.5">PER-2/PJ/2024 &bull; Coretax Form</div>
             </div>
           </div>
-        </div>
-
-        <!-- NOMOR BUKTI POTONG -->
-        <div class="flex items-center justify-between text-xs mb-3 border-b border-slate-300 pb-2">
-          <div>
-            <span class="font-semibold text-slate-700">Nomor Bukti Pemotongan:</span>
-            <span id="bpa2-no-display" class="font-mono font-bold text-slate-950 ml-1 px-2 py-0.5 bg-slate-100 rounded border border-slate-300">${nomorBpa2}</span>
-          </div>
-          <div class="text-[11px] text-slate-500">
-            Status Pembetulan: <strong>0 (Normal)</strong>
+          <!-- 4 Metadata Columns -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x-2 divide-slate-900 text-center text-[10px] bg-slate-100 font-bold">
+            <div class="p-1.5 border-r sm:border-r-0 border-slate-900">
+              <div class="text-slate-600 text-[8px] uppercase tracking-wider">NOMOR BUKTI PEMOTONGAN</div>
+              <div class="font-mono text-xs font-bold text-slate-950" id="bpa2-no-display">${nomorBpa2}</div>
+            </div>
+            <div class="p-1.5">
+              <div class="text-slate-600 text-[8px] uppercase tracking-wider">PERIODE PENGHASILAN</div>
+              <div class="font-mono text-xs font-bold text-slate-950">${periodePenghasilan}</div>
+            </div>
+            <div class="p-1.5 border-r sm:border-r-0 border-slate-900 border-t sm:border-t-0">
+              <div class="text-slate-600 text-[8px] uppercase tracking-wider">SIFAT PEMOTONGAN</div>
+              <div class="text-xs font-bold text-slate-950">TIDAK FINAL</div>
+            </div>
+            <div class="p-1.5 border-t sm:border-t-0">
+              <div class="text-slate-600 text-[8px] uppercase tracking-wider">STATUS BUKTI PEMOTONGAN</div>
+              <div class="text-xs font-bold text-slate-950">NORMAL</div>
+            </div>
           </div>
         </div>
 
         <!-- BAGIAN A: IDENTITAS PENERIMA PENGHASILAN -->
-        <div class="mb-4">
-          <div class="bg-slate-800 text-white px-3 py-1 text-xs font-bold uppercase tracking-wider mb-1">
-            A. IDENTITAS PENERIMA PENGHASILAN YANG DIPOTONG
+        <div class="mb-3">
+          <div class="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-1">
+            A. IDENTITAS PENERIMA PENGHASILAN
           </div>
-          <div class="border border-slate-300 rounded text-xs p-3 grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
+          <div class="border border-slate-300 rounded text-xs p-2.5 grid grid-cols-1 sm:grid-cols-2 gap-y-1.5 gap-x-4">
             <div>
-              <span class="text-slate-500 block text-[10px]">1. NPWP / NIK:</span>
-              <span class="font-mono font-bold text-slate-900">${formatNPWP(p.npwp || p.nik) || '-'}</span>
+              <span class="text-slate-500 text-[10px] inline-block w-24">A.1 NIK/NPWP</span>: 
+              <span class="font-mono font-bold text-slate-900 ml-1">${formatNPWP(p.npwp || p.nik) || '-'}</span>
             </div>
             <div>
-              <span class="text-slate-500 block text-[10px]">2. NIP Pegawai:</span>
-              <span class="font-mono font-semibold text-slate-900">${p.nip || '-'}</span>
+              <span class="text-slate-500 text-[10px] inline-block w-24">A.6 Pangkat/Gol</span>: 
+              <span class="font-semibold text-slate-900 ml-1">${p.pangkat_golongan || '-'}</span>
             </div>
             <div>
-              <span class="text-slate-500 block text-[10px]">3. Nama Lengkap:</span>
-              <span class="font-bold text-slate-900 text-sm">${p.nama || '-'}</span>
+              <span class="text-slate-500 text-[10px] inline-block w-24">A.2 Nama</span>: 
+              <span class="font-bold text-slate-900 text-xs sm:text-sm ml-1">${p.nama || '-'}</span>
             </div>
             <div>
-              <span class="text-slate-500 block text-[10px]">4. Pangkat / Golongan:</span>
-              <span class="font-semibold text-slate-900">${p.pangkat_golongan || '-'}</span>
+              <span class="text-slate-500 text-[10px] inline-block w-24">A.7 Status PTKP</span>: 
+              <span class="font-bold text-slate-900 font-mono ml-1">${p.status_ptkp} (Kategori TER ${p.kategori_ter})</span>
             </div>
             <div>
-              <span class="text-slate-500 block text-[10px]">5. Jabatan:</span>
-              <span class="text-slate-900">${p.jabatan || '-'}</span>
+              <span class="text-slate-500 text-[10px] inline-block w-24">A.3 Alamat</span>: 
+              <span class="text-slate-800 ml-1">${p.instansi.kota_penandatangan || 'Salatiga'}</span>
             </div>
-            <div class="flex gap-4">
-              <div>
-                <span class="text-slate-500 block text-[10px]">6. Status PTKP:</span>
-                <span class="font-bold text-slate-900 font-mono">${p.status_ptkp}</span>
-              </div>
-              <div>
-                <span class="text-slate-500 block text-[10px]">7. Kategori TER:</span>
-                <span class="font-bold text-slate-900 font-mono">TER ${p.kategori_ter}</span>
-              </div>
+            <div>
+              <span class="text-slate-500 text-[10px] inline-block w-24">A.8 Posisi / Jabatan</span>: 
+              <span class="text-slate-900 ml-1 font-medium">${p.jabatan || '-'}</span>
+            </div>
+            <div>
+              <span class="text-slate-500 text-[10px] inline-block w-24">A.4 NIP/NRP</span>: 
+              <span class="font-mono font-semibold text-slate-900 ml-1">${p.nip || '-'}</span>
+            </div>
+            <div>
+              <span class="text-slate-500 text-[10px] inline-block w-24">A.9 Lebih dari 1 Kerja</span>: 
+              <span class="text-slate-900 ml-1">Tidak</span>
             </div>
           </div>
         </div>
 
         <!-- BAGIAN B: RINCIAN PENGHASILAN DAN PENGHITUNGAN PPh PASAL 21 -->
-        <div class="mb-4">
-          <div class="bg-slate-800 text-white px-3 py-1 text-xs font-bold uppercase tracking-wider mb-1">
-            B. RINCIAN PENGHASILAN DAN PENGHITUNGAN PPh PASAL 21 TAHUNAN
+        <div class="mb-3">
+          <div class="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-1 flex items-center justify-between">
+            <span>B. RINCIAN PENGHASILAN DAN PENGHITUNGAN PPh PASAL 21</span>
+            <span class="text-[10px] text-slate-300 font-normal">B.1.1 Kode: 21-100-01 &bull; B.2 Jenis: ${jenisPemotongan}</span>
           </div>
           <div class="border border-slate-300 rounded overflow-hidden text-xs">
             <table class="w-full">
-              <thead class="bg-slate-100 border-b border-slate-300 font-bold text-slate-700 text-[11px]">
+              <thead class="bg-slate-100 border-b border-slate-300 font-bold text-slate-700 text-[10px]">
                 <tr>
-                  <th class="py-1.5 px-3 w-10 text-center border-r border-slate-300">NO</th>
-                  <th class="py-1.5 px-3 text-left border-r border-slate-300">URAIAN OBJEK PENGHASILAN & PENGURANG</th>
-                  <th class="py-1.5 px-3 text-right w-44">JUMLAH (RUPIAH)</th>
+                  <th class="py-1 px-2.5 w-10 text-center border-r border-slate-300">NO</th>
+                  <th class="py-1 px-2.5 text-left border-r border-slate-300">URAIAN RINCIAN PENGHASILAN & PENGURANG</th>
+                  <th class="py-1 px-2.5 text-right w-40 sm:w-44">JUMLAH (Rp)</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-200">
                 <!-- Objek Penghasilan -->
-                <tr class="bg-slate-50/70 font-semibold text-[11px] text-slate-600">
-                  <td class="py-1 px-3 text-center border-r border-slate-300">I</td>
-                  <td colspan="2" class="py-1 px-3">PENGHASILAN BRUTO</td>
+                <tr class="bg-slate-100/70 font-bold text-[10px] text-slate-800">
+                  <td class="py-1 px-2.5 text-center border-r border-slate-300">I</td>
+                  <td colspan="2" class="py-1 px-2.5">PENGHASILAN BRUTO</td>
                 </tr>
                 <tr>
-                  <td class="py-1 px-3 text-center font-mono text-slate-500 border-r border-slate-300">1</td>
-                  <td class="py-1 px-3 text-slate-800 border-r border-slate-300">Gaji Pokok Plus Tunjangan Melekat</td>
-                  <td class="py-1 px-3 text-right font-mono text-slate-900">${formatNumber(gajiTotal)}</td>
+                  <td class="py-0.5 px-2.5 text-center font-mono text-slate-500 border-r border-slate-300">1.</td>
+                  <td class="py-0.5 px-2.5 text-slate-800 border-r border-slate-300">Gaji Pokok / Pensiun &amp; Tunjangan Melekat</td>
+                  <td class="py-0.5 px-2.5 text-right font-mono text-slate-900">${formatNumber(gajiTotal)}</td>
                 </tr>
                 <tr>
-                  <td class="py-1 px-3 text-center font-mono text-slate-500 border-r border-slate-300">2</td>
-                  <td class="py-1 px-3 text-slate-800 border-r border-slate-300">Tunjangan Tambahan Penghasilan (TPP / Tukin)</td>
-                  <td class="py-1 px-3 text-right font-mono text-slate-900">${formatNumber(tppTotal)}</td>
+                  <td class="py-0.5 px-2.5 text-center font-mono text-slate-500 border-r border-slate-300">2.</td>
+                  <td class="py-0.5 px-2.5 text-slate-800 border-r border-slate-300">Tunjangan Istri</td>
+                  <td class="py-0.5 px-2.5 text-right font-mono text-slate-400">0</td>
                 </tr>
                 <tr>
-                  <td class="py-1 px-3 text-center font-mono text-slate-500 border-r border-slate-300">3</td>
-                  <td class="py-1 px-3 text-slate-800 border-r border-slate-300">Upah Pungut / Honorarium Rutin</td>
-                  <td class="py-1 px-3 text-right font-mono text-slate-900">${formatNumber(honor1Total)}</td>
+                  <td class="py-0.5 px-2.5 text-center font-mono text-slate-500 border-r border-slate-300">3.</td>
+                  <td class="py-0.5 px-2.5 text-slate-800 border-r border-slate-300">Tunjangan Anak</td>
+                  <td class="py-0.5 px-2.5 text-right font-mono text-slate-400">0</td>
                 </tr>
                 <tr>
-                  <td class="py-1 px-3 text-center font-mono text-slate-500 border-r border-slate-300">4</td>
-                  <td class="py-1 px-3 text-slate-800 border-r border-slate-300">Honorarium Lintas OPD / Kegiatan Lainnya</td>
-                  <td class="py-1 px-3 text-right font-mono text-slate-900">${formatNumber(honor2Total)}</td>
+                  <td class="py-0.5 px-2.5 text-center font-mono text-slate-500 border-r border-slate-300">4.</td>
+                  <td class="py-0.5 px-2.5 text-slate-800 border-r border-slate-300">Tunjangan Perbaikan Penghasilan</td>
+                  <td class="py-0.5 px-2.5 text-right font-mono text-slate-400">0</td>
+                </tr>
+                <tr>
+                  <td class="py-0.5 px-2.5 text-center font-mono text-slate-500 border-r border-slate-300">5.</td>
+                  <td class="py-0.5 px-2.5 text-slate-800 border-r border-slate-300">Tunjangan Struktural / Fungsional</td>
+                  <td class="py-0.5 px-2.5 text-right font-mono text-slate-400">0</td>
+                </tr>
+                <tr>
+                  <td class="py-0.5 px-2.5 text-center font-mono text-slate-500 border-r border-slate-300">6.</td>
+                  <td class="py-0.5 px-2.5 text-slate-800 border-r border-slate-300">Tunjangan Beras</td>
+                  <td class="py-0.5 px-2.5 text-right font-mono text-slate-400">0</td>
+                </tr>
+                <tr>
+                  <td class="py-0.5 px-2.5 text-center font-mono text-slate-500 border-r border-slate-300">7.</td>
+                  <td class="py-0.5 px-2.5 text-slate-800 border-r border-slate-300">Tunjangan Lain-lain</td>
+                  <td class="py-0.5 px-2.5 text-right font-mono text-slate-400">0</td>
+                </tr>
+                <tr>
+                  <td class="py-0.5 px-2.5 text-center font-mono text-slate-500 border-r border-slate-300">8.</td>
+                  <td class="py-0.5 px-2.5 text-slate-800 border-r border-slate-300">
+                    <div>Penghasilan Tetap dan Teratur Lainnya yang Pembayarannya Terpisah dari Pembayaran Gaji</div>
+                    ${penghasilanTetapTerpisah > 0 ? `<div class="text-[9px] text-slate-500 font-normal">TPP: ${formatNumber(tppTotal)} &bull; Honorarium: ${formatNumber(honor1Total + honor2Total)}</div>` : ''}
+                  </td>
+                  <td class="py-0.5 px-2.5 text-right font-mono text-slate-900 font-medium">${formatNumber(penghasilanTetapTerpisah)}</td>
                 </tr>
                 <tr class="bg-slate-100 font-bold border-t-2 border-slate-300">
-                  <td class="py-1.5 px-3 text-center border-r border-slate-300">5</td>
-                  <td class="py-1.5 px-3 text-slate-900 border-r border-slate-300">JUMLAH PENGHASILAN BRUTO (1 + 2 + 3 + 4)</td>
-                  <td class="py-1.5 px-3 text-right font-mono text-slate-950">${formatNumber(brutoTotal)}</td>
+                  <td class="py-1 px-2.5 text-center border-r border-slate-300">9.</td>
+                  <td class="py-1 px-2.5 text-slate-950 border-r border-slate-300">Jumlah Penghasilan Bruto (1 s.d. 8)</td>
+                  <td class="py-1 px-2.5 text-right font-mono text-slate-950">${formatNumber(brutoTotal)}</td>
                 </tr>
 
                 <!-- Pengurang -->
-                <tr class="bg-slate-50/70 font-semibold text-[11px] text-slate-600">
-                  <td class="py-1 px-3 text-center border-r border-slate-300">II</td>
-                  <td colspan="2" class="py-1 px-3">PENGURANG PENGHASILAN BRUTO</td>
+                <tr class="bg-slate-100/70 font-bold text-[10px] text-slate-800">
+                  <td class="py-1 px-2.5 text-center border-r border-slate-300">II</td>
+                  <td colspan="2" class="py-1 px-2.5">PENGURANG PENGHASILAN BRUTO</td>
                 </tr>
                 <tr>
-                  <td class="py-1 px-3 text-center font-mono text-slate-500 border-r border-slate-300">6</td>
-                  <td class="py-1 px-3 text-slate-800 border-r border-slate-300">Biaya Jabatan (5% x Bruto, Maks. ${formatRupiah(maxBiayaJabatan)})</td>
-                  <td class="py-1 px-3 text-right font-mono text-slate-800">${formatNumber(biayaJabatan)}</td>
+                  <td class="py-0.5 px-2.5 text-center font-mono text-slate-500 border-r border-slate-300">10.</td>
+                  <td class="py-0.5 px-2.5 text-slate-800 border-r border-slate-300">Biaya Jabatan / Biaya Pensiun (Maks. ${formatRupiah(maxBiayaJabatan)})</td>
+                  <td class="py-0.5 px-2.5 text-right font-mono text-slate-800">${formatNumber(biayaJabatan)}</td>
                 </tr>
                 <tr>
-                  <td class="py-1 px-3 text-center font-mono text-slate-500 border-r border-slate-300">7</td>
-                  <td class="py-1 px-3 text-slate-800 border-r border-slate-300">Iuran Pensiun / THT (${p.persen_iuran_pensiun}% dari Gaji Pokok)</td>
-                  <td class="py-1 px-3 text-right font-mono text-slate-800">${formatNumber(iuranPensiun)}</td>
+                  <td class="py-0.5 px-2.5 text-center font-mono text-slate-500 border-r border-slate-300">11.</td>
+                  <td class="py-0.5 px-2.5 text-slate-800 border-r border-slate-300">Iuran terkait Pensiun atau Hari Tua (${p.persen_iuran_pensiun}% dari Gaji Pokok)</td>
+                  <td class="py-0.5 px-2.5 text-right font-mono text-slate-800">${formatNumber(iuranPensiun)}</td>
+                </tr>
+                <tr>
+                  <td class="py-0.5 px-2.5 text-center font-mono text-slate-500 border-r border-slate-300">12.</td>
+                  <td class="py-0.5 px-2.5 text-slate-800 border-r border-slate-300">Zakat atau Sumbangan Keagamaan yang Bersifat Wajib yang Dibayarkan melalui Pemberi Kerja</td>
+                  <td class="py-0.5 px-2.5 text-right font-mono text-slate-400">0</td>
                 </tr>
                 <tr class="bg-slate-100 font-bold border-t border-slate-300">
-                  <td class="py-1.5 px-3 text-center border-r border-slate-300">8</td>
-                  <td class="py-1.5 px-3 text-slate-900 border-r border-slate-300">JUMLAH PENGURANG (6 + 7)</td>
-                  <td class="py-1.5 px-3 text-right font-mono text-slate-950">${formatNumber(totalPengurang)}</td>
+                  <td class="py-1 px-2.5 text-center border-r border-slate-300">13.</td>
+                  <td class="py-1 px-2.5 text-slate-950 border-r border-slate-300">Jumlah Pengurangan (10 s.d 12)</td>
+                  <td class="py-1 px-2.5 text-right font-mono text-slate-950">${formatNumber(totalPengurang)}</td>
                 </tr>
 
                 <!-- Penghitungan PPh 21 -->
-                <tr class="bg-slate-50/70 font-semibold text-[11px] text-slate-600">
-                  <td class="py-1 px-3 text-center border-r border-slate-300">III</td>
-                  <td colspan="2" class="py-1 px-3">PENGHITUNGAN PPh PASAL 21</td>
+                <tr class="bg-slate-100/70 font-bold text-[10px] text-slate-800">
+                  <td class="py-1 px-2.5 text-center border-r border-slate-300">III</td>
+                  <td colspan="2" class="py-1 px-2.5">PENGHITUNGAN PPh PASAL 21</td>
                 </tr>
                 <tr>
-                  <td class="py-1 px-3 text-center font-mono text-slate-500 border-r border-slate-300">9</td>
-                  <td class="py-1 px-3 text-slate-800 border-r border-slate-300">Jumlah Penghasilan Neto (5 - 8)</td>
-                  <td class="py-1 px-3 text-right font-mono text-slate-900 font-semibold">${formatNumber(penghasilanNeto)}</td>
+                  <td class="py-0.5 px-2.5 text-center font-mono text-slate-500 border-r border-slate-300">14.</td>
+                  <td class="py-0.5 px-2.5 text-slate-800 border-r border-slate-300">Jumlah Penghasilan Neto (9 - 13)</td>
+                  <td class="py-0.5 px-2.5 text-right font-mono text-slate-900 font-semibold">${formatNumber(penghasilanNeto)}</td>
+                </tr>
+                <tr class="${penghasilanNetoSebelumnya > 0 ? 'bg-amber-50/70' : ''}">
+                  <td class="py-0.5 px-2.5 text-center font-mono text-slate-500 border-r border-slate-300">15.</td>
+                  <td class="py-0.5 px-2.5 text-slate-800 border-r border-slate-300">
+                    <span class="${penghasilanNetoSebelumnya > 0 ? 'font-bold text-slate-900' : ''}">Penghasilan Neto dari Pemotongan Sebelumnya</span>
+                    ${penghasilanNetoSebelumnya > 0 ? `<span class="ml-1 text-[9px] text-amber-800 bg-amber-100 px-1 py-0.2 rounded font-semibold no-print">Akumulasi Bukti Potong Sebelumnya</span>` : ''}
+                  </td>
+                  <td class="py-0.5 px-2.5 text-right font-mono ${penghasilanNetoSebelumnya > 0 ? 'font-bold text-amber-950' : 'text-slate-700'}">${formatNumber(penghasilanNetoSebelumnya)}</td>
+                </tr>
+                <tr class="bg-slate-50 font-semibold">
+                  <td class="py-0.5 px-2.5 text-center font-mono text-slate-500 border-r border-slate-300">16.</td>
+                  <td class="py-0.5 px-2.5 text-slate-800 border-r border-slate-300">Jumlah Penghasilan Neto untuk Perhitungan PPh Pasal 21 (Setahun / Disetahunkan) (14 + 15)</td>
+                  <td class="py-0.5 px-2.5 text-right font-mono text-slate-950 font-bold">${formatNumber(jumlahPenghasilanNeto)}</td>
                 </tr>
                 <tr>
-                  <td class="py-1 px-3 text-center font-mono text-slate-500 border-r border-slate-300">10</td>
-                  <td class="py-1 px-3 text-slate-800 border-r border-slate-300">Penghasilan Tidak Kena Pajak (PTKP ${p.status_ptkp})</td>
-                  <td class="py-1 px-3 text-right font-mono text-slate-800">${formatNumber(ptkp)}</td>
+                  <td class="py-0.5 px-2.5 text-center font-mono text-slate-500 border-r border-slate-300">17.</td>
+                  <td class="py-0.5 px-2.5 text-slate-800 border-r border-slate-300">Penghasilan Tidak Kena Pajak (PTKP ${p.status_ptkp})</td>
+                  <td class="py-0.5 px-2.5 text-right font-mono text-slate-800">${formatNumber(ptkp)}</td>
                 </tr>
                 <tr class="bg-slate-50 font-bold">
-                  <td class="py-1 px-3 text-center border-r border-slate-300">11</td>
-                  <td class="py-1 px-3 text-slate-900 border-r border-slate-300">Penghasilan Kena Pajak (PKP Dibulatkan ke Bawah)</td>
-                  <td class="py-1 px-3 text-right font-mono text-slate-950">${formatNumber(pkp)}</td>
-                </tr>
-                <tr class="font-bold">
-                  <td class="py-1.5 px-3 text-center border-r border-slate-300">12</td>
-                  <td class="py-1.5 px-3 text-slate-900 border-r border-slate-300">PPh Pasal 21 Terutang ${akhir && akhir.jumlah_bulan < 12 ? `Masa ${kodeMasa}` : 'Setahun'} (Pasal 17 UU HPP)</td>
-                  <td class="py-1.5 px-3 text-right font-mono text-blue-900">${formatNumber(pph21Setahun)}</td>
+                  <td class="py-0.5 px-2.5 text-center border-r border-slate-300">18.</td>
+                  <td class="py-0.5 px-2.5 text-slate-900 border-r border-slate-300">Penghasilan Kena Pajak Setahun / Disetahunkan (16 - 17)</td>
+                  <td class="py-0.5 px-2.5 text-right font-mono text-slate-950">${formatNumber(pkp)}</td>
                 </tr>
                 <tr>
-                  <td class="py-1 px-3 text-center font-mono text-slate-500 border-r border-slate-300">13</td>
-                  <td class="py-1 px-3 text-slate-800 border-r border-slate-300">PPh Pasal 21 yang Telah Dipotong Masa Sebelumnya${akhir && akhir.jumlah_bulan > 1 ? ` (Masa ${String(akhir.bulan_mulai).padStart(2, '0')} s.d. ${String(akhir.bulan_akhir - 1).padStart(2, '0')})` : ''}</td>
-                  <td class="py-1 px-3 text-right font-mono text-slate-800">${formatNumber(pph21Sebelumnya)}</td>
+                  <td class="py-0.5 px-2.5 text-center font-mono text-slate-500 border-r border-slate-300">19.</td>
+                  <td class="py-0.5 px-2.5 text-slate-800 border-r border-slate-300">PPh Pasal 21 atas Penghasilan Kena Pajak Setahun / Disetahunkan</td>
+                  <td class="py-0.5 px-2.5 text-right font-mono text-slate-900 font-semibold">${formatNumber(pph21Setahun)}</td>
                 </tr>
-                <tr class="bg-emerald-50/70 font-bold border-t-2 border-slate-400">
-                  <td class="py-2 px-3 text-center border-r border-slate-300 text-emerald-900">14</td>
-                  <td class="py-2 px-3 text-emerald-950 border-r border-slate-300">PPh Pasal 21 Kurang / (Lebih) Dipotong Masa Terakhir (${akhir ? akhir.nama_bulan_akhir : 'Masa Terakhir'})</td>
-                  <td class="py-2 px-3 text-right font-mono text-emerald-950 text-sm">${formatNumber(pph21TerutangMasaAkhir)}</td>
+                <tr class="font-bold bg-slate-50">
+                  <td class="py-0.5 px-2.5 text-center border-r border-slate-300">20.</td>
+                  <td class="py-0.5 px-2.5 text-slate-900 border-r border-slate-300">PPh Pasal 21 Terutang</td>
+                  <td class="py-0.5 px-2.5 text-right font-mono text-slate-950">${formatNumber(pph21Setahun)}</td>
+                </tr>
+                <tr class="${pph21DipotongSebelumnya > 0 ? 'bg-amber-50/70' : ''}">
+                  <td class="py-0.5 px-2.5 text-center font-mono text-slate-500 border-r border-slate-300">21.</td>
+                  <td class="py-0.5 px-2.5 text-slate-800 border-r border-slate-300">
+                    <span class="${pph21DipotongSebelumnya > 0 ? 'font-bold text-slate-900' : ''}">PPh Pasal 21 Dipotong dari Bukti Pemotongan Sebelumnya</span>
+                    ${pph21DipotongSebelumnya > 0 ? `<span class="ml-1 text-[9px] text-amber-800 bg-amber-100 px-1 py-0.2 rounded font-semibold no-print">Kredit Bukti Potong Sebelumnya</span>` : ''}
+                  </td>
+                  <td class="py-0.5 px-2.5 text-right font-mono ${pph21DipotongSebelumnya > 0 ? 'font-bold text-rose-700' : 'text-slate-700'}">${formatNumber(pph21DipotongSebelumnya)}</td>
+                </tr>
+                <tr class="font-bold bg-blue-50/60">
+                  <td class="py-1 px-2.5 text-center border-r border-slate-300 text-blue-950">22.</td>
+                  <td class="py-1 px-2.5 text-blue-950 border-r border-slate-300">PPh Pasal 21 Terutang pada Bukti Pemotongan Ini (Dapat Dikreditkan Pada SPT Tahunan) (20 - 21)</td>
+                  <td class="py-1 px-2.5 text-right font-mono text-blue-900 text-sm">${formatNumber(pph21TerutangBuktiIni)}</td>
+                </tr>
+                <tr>
+                  <td class="py-0.5 px-2.5 text-center font-mono text-slate-500 border-r border-slate-300">23.</td>
+                  <td class="py-0.5 px-2.5 text-slate-800 border-r border-slate-300">PPh Pasal 21 yang Telah Dipotong${akhir && akhir.jumlah_bulan > 1 ? ` (Masa ${String(akhir.bulan_mulai).padStart(2, '0')} s.d. ${String(akhir.bulan_akhir - 1).padStart(2, '0')})` : ''}</td>
+                  <td class="py-0.5 px-2.5 text-right font-mono text-slate-800">${formatNumber(pph21TelahDipotong)}</td>
+                </tr>
+                <tr class="bg-emerald-50/80 font-bold border-t-2 border-slate-400">
+                  <td class="py-1 px-2.5 text-center border-r border-slate-300 text-emerald-900">24.</td>
+                  <td class="py-1 px-2.5 text-emerald-950 border-r border-slate-300">PPh Pasal 21 Kurang (Lebih) Dipotong pada Masa Pajak ${akhir ? akhir.nama_bulan_akhir : 'Desember'} / Masa Pajak Terakhir (22 - 23)</td>
+                  <td class="py-1 px-2.5 text-right font-mono text-emerald-950 text-sm">${formatNumber(pph21KurangLebihMasaAkhir)}</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        <!-- BAGIAN C: REKAPITULASI PEMOTONGAN PAJAK (SPLIT WITHHOLDING) -->
-        <div class="mb-5">
-          <div class="bg-slate-800 text-white px-3 py-1 text-xs font-bold uppercase tracking-wider mb-1">
-            C. REKAPITULASI PEMOTONGAN PAJAK OLEH BENDAHARA PENGELUARAN
+        <!-- BAGIAN C: IDENTITAS PEMOTONG PPh SESUAI DOKUMEN RESMI DJP -->
+        <div class="mb-4">
+          <div class="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-1">
+            C. IDENTITAS PEMOTONG PPh
+          </div>
+          <div class="border border-slate-300 rounded text-xs p-3 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+            <div class="md:col-span-8 space-y-1.5">
+              <div><span class="text-slate-500 text-[10px] inline-block w-24">C.1 NPWP</span>: <span class="font-mono font-bold text-slate-900">${formatNPWP(currentPemotongNPWP)}</span></div>
+              <div><span class="text-slate-500 text-[10px] inline-block w-24">C.2 NITKU</span>: <span class="font-mono text-slate-800 text-[11px]">${currentPemotongNPWP}0000000 - ${currentPemotongTitle}</span></div>
+              <div><span class="text-slate-500 text-[10px] inline-block w-24">C.3 Nama Pemotong</span>: <span class="font-bold text-slate-900">${currentPemotongTitle}</span></div>
+              <div><span class="text-slate-500 text-[10px] inline-block w-24">C.4 Tanggal</span>: <span class="text-slate-900">${tanggalHariIni}</span></div>
+              <div><span class="text-slate-500 text-[10px] inline-block w-24">C.5 Penandatangan</span>: <span class="font-bold text-slate-900 underline">${currentBendaharaNama}</span> <span class="text-[10px] font-mono text-slate-600">(${currentBendaharaNIP ? 'NIP. ' + currentBendaharaNIP : 'Bendahara Pengeluaran'})</span></div>
+              <div class="text-[9px] text-slate-500 italic pt-1 border-t border-slate-200">
+                <strong>C.6 Pernyataan:</strong> Dengan ini saya menyatakan bahwa Bukti Pemotongan ini telah saya isi dengan benar dan telah saya tandatangani secara elektronik sesuai ketentuan peraturan perundang-undangan perpajakan.
+              </div>
+            </div>
+
+            <div class="md:col-span-4 border-t md:border-t-0 md:border-l border-slate-300 pt-2 md:pt-0 md:pl-4 text-center flex flex-col items-center justify-center">
+              <div class="w-16 h-16 border-2 border-slate-900 rounded p-1 flex items-center justify-center bg-slate-50 shadow-xs mb-1">
+                <svg class="w-14 h-14 text-slate-900" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-3 2h2v3h-2v-3zm3 3h3v3h-3v-3zm-5 1h2v2h-2v-2zm0-4h2v2h-2v-2z"/>
+                </svg>
+              </div>
+              <div class="text-[9px] font-bold text-slate-900 uppercase">Ditandatangani secara elektronik</div>
+              <div class="text-[8px] text-slate-500 leading-tight mt-0.5">
+                Sesuai dengan ketentuan yang berlaku, Direktorat Jenderal Pajak mengatur bahwa Bukti Pemotongan ini sah tanpa tanda tangan basah.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BAGIAN D: REKAPITULASI PEMOTONGAN PAJAK (SPLIT WITHHOLDING) -->
+        <div>
+          <div class="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-1 flex items-center justify-between">
+            <span>D. REKAPITULASI PEMOTONGAN PAJAK OLEH BENDAHARA PENGELUARAN (SPLIT WITHHOLDING)</span>
+            <span class="text-[10px] text-slate-300 font-normal">Kontribusi per NPWP Pemotong</span>
           </div>
           <div class="border border-slate-300 rounded overflow-hidden text-[11px]">
             <table class="w-full">
@@ -359,34 +468,33 @@ export function renderBpa2View(): string {
           </div>
         </div>
 
-        <!-- BAGIAN D: TANDA TANGAN PEMOTONG PAJAK -->
-        <div class="border-t-2 border-slate-400 pt-3">
-          <div class="grid grid-cols-2 gap-4 text-xs">
-            <div class="space-y-1">
-              <div class="font-bold text-slate-800 uppercase text-[11px]">D. IDENTITAS PEMOTONG PAJAK</div>
-              <div><span class="text-slate-500">Nama Instansi:</span> <span class="font-semibold text-slate-900">${currentPemotongTitle}</span></div>
-              <div><span class="text-slate-500">NPWP Instansi:</span> <span class="font-mono text-slate-900">${formatNPWP(currentPemotongNPWP)}</span></div>
-              <div class="text-[10px] text-slate-500 italic mt-2">
-                *Bukti pemotongan ini sah dan dicetak secara elektronik melalui Sistem Kalkulator PPh 21 ASN.
-              </div>
-            </div>
+      </div>
 
-            <div class="text-center flex flex-col items-center justify-between">
-              <div>
-                <div id="bpa2-tgl-display">${currentKota}, ${tanggalHariIni}</div>
-                <div class="font-bold text-slate-900 mt-0.5">Bendahara Pengeluaran,</div>
-              </div>
-              <div class="my-6 text-slate-300 font-mono text-[10px] italic border-b border-dashed border-slate-300 px-8 py-2">
-                (Tanda Tangan & Cap Instansi)
-              </div>
-              <div>
-                <div class="font-bold text-slate-950 underline">${currentBendaharaNama}</div>
-                <div class="text-[11px] font-mono text-slate-700">NIP. ${currentBendaharaNIP}</div>
-              </div>
-            </div>
+      <!-- Quick Navigation Card (Hidden in Print) -->
+      <div class="bg-slate-900 text-white rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 no-print">
+        <div class="max-w-2xl">
+          <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-400/30 mb-2">
+            Selesai Siklus Perhitungan (Form 4 dari 4)
           </div>
+          <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">Langkah Selanjutnya</h4>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Formulir Bukti Potong 1721-BPA2 telah siap dicetak atau diunduh. Gunakan data bukti pemotongan ini untuk pelaporan <strong>SPT Tahunan Orang Pribadi</strong> di DJP Online, atau lanjutkan ke panduan FAQ serta pemrosesan pegawai berikutnya.
+          </p>
         </div>
-
+        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
+          <button id="btn-goto-hasil-from-bpa2" class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer">
+            <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            <span>Hasil Rekonsiliasi</span>
+          </button>
+          <button id="btn-goto-pegawai-from-bpa2" class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer">
+            <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <span>Pegawai Baru</span>
+          </button>
+          <button id="btn-goto-faq-from-bpa2" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition cursor-pointer">
+            <span>Panduan SPT &amp; FAQ</span>
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </button>
+        </div>
       </div>
     </div>
   `;

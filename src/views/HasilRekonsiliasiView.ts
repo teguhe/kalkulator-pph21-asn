@@ -173,7 +173,7 @@ export function renderHasilRekonsiliasiView(): string {
                 : isLebihBayar
                 ? `Terjadi <strong>Lebih Potong sebesar ${formatRupiah(Math.abs(selisihTahunan))}</strong>. Pemotongan pajak bulanan yang dilakukan sebelumnya melebihi total PPh 21 Pasal 17 terutang tahunan. Kelebihan ini dapat diperhitungkan/dikembalikan oleh bendahara pemotong.`
                 : `Penghitungan pajak PPh 21 Anda <strong>Nihil (Sempurna)</strong>. Jumlah pajak yang dipotong sepanjang tahun tepat sama dengan PPh 21 Pasal 17 yang terutang.`}
-              ${daftarAkhir.length > 1 ? `<br><span class="inline-block mt-2 font-semibold text-amber-300">Catatan: Terdeteksi ${daftarAkhir.length} akhir periode perhitungan pajak (${daftarAkhir.map(d => `Masa ${d.kode_masa} [${d.nama_bulan_akhir}]`).join(' dan ')}). Setiap periode memiliki rekonsiliasi Pasal 17 dan bukti potong BPA2 tersendiri.</span>` : ''}
+              ${daftarAkhir.length > 1 ? `<br><span class="inline-block mt-2 font-semibold text-amber-300">Catatan: Terdeteksi ${daftarAkhir.length} akhir periode perhitungan pajak (${daftarAkhir.map(d => `Masa ${d.kode_masa} [${d.nama_bulan_akhir}]`).join(' dan ')}). Setiap periode memiliki rekonsiliasi Pasal 17 dan bukti potong BPA2 tersendiri. Pada periode berikutnya, Penghasilan Neto dari pemotongan sebelumnya diakumulasikan (Baris 15 Formulir BPA2) dan PPh 21 bukti sebelumnya dikreditkan (Baris 21) sesuai regulasi DJP PER-2/PJ/2024.</span>` : ''}
             </p>
           </div>
         </div>
@@ -237,31 +237,51 @@ export function renderHasilRekonsiliasiView(): string {
             <!-- Left: Pengurang, Neto, PTKP, PKP -->
             <div class="space-y-3">
               <div class="flex justify-between items-center py-2 border-b border-slate-100 text-xs">
-                <span class="text-slate-600">Total Penghasilan Bruto Akumulatif (${akhir.jumlah_bulan} Bulan):</span>
+                <span class="text-slate-600">Total Bruto Masa Ini (${akhir.jumlah_bulan} Bulan) [Baris 9]:</span>
                 <span class="font-bold font-mono text-slate-900">${formatRupiah(akhir.total_bruto_akumulasi)}</span>
               </div>
               <div class="flex justify-between items-center py-2 border-b border-slate-100 text-xs">
-                <span class="text-slate-600">Biaya Jabatan (5% maks Rp 500.000/bln x ${akhir.jumlah_bulan} bln):</span>
+                <span class="text-slate-600">Biaya Jabatan (5% maks Rp 500.000/bln x ${akhir.jumlah_bulan} bln) [Baris 10]:</span>
                 <span class="font-bold font-mono text-rose-600">- ${formatRupiah(akhir.biaya_jabatan)}</span>
               </div>
               <div class="flex justify-between items-center py-2 border-b border-slate-100 text-xs">
-                <span class="text-slate-600">Iuran Pensiun / THT (${dataset.pegawai.persen_iuran_pensiun}% dari Gaji):</span>
+                <span class="text-slate-600">Iuran Pensiun / THT (${dataset.pegawai.persen_iuran_pensiun}% dari Gaji) [Baris 11]:</span>
                 <span class="font-bold font-mono text-rose-600">- ${formatRupiah(akhir.iuran_pensiun)}</span>
               </div>
               <div class="flex justify-between items-center py-2 border-b border-slate-200 text-xs bg-slate-50 px-2 rounded font-semibold">
-                <span class="text-slate-800">Total Pengurang Bruto:</span>
+                <span class="text-slate-800">Total Pengurang Bruto [Baris 13]:</span>
                 <span class="font-mono text-rose-700">- ${formatRupiah(akhir.total_pengurang)}</span>
               </div>
               <div class="flex justify-between items-center py-2 border-b border-slate-100 text-xs">
-                <span class="text-slate-700 font-semibold">Penghasilan Neto:</span>
+                <span class="text-slate-700 font-semibold">Jumlah Penghasilan Neto Masa Ini (9 - 13) [Baris 14]:</span>
                 <span class="font-bold font-mono text-slate-900">${formatRupiah(akhir.penghasilan_neto)}</span>
               </div>
+
+              <!-- Baris 15: Penghasilan Neto dari Pemotongan Sebelumnya -->
+              <div class="flex justify-between items-center py-2 border-b border-slate-100 text-xs ${akhir.penghasilan_neto_sebelumnya > 0 ? 'bg-amber-50/90 px-2 rounded border border-amber-300' : ''}">
+                <div>
+                  <span class="text-slate-800 font-bold">Penghasilan Neto dari Pemotongan Sebelumnya [Baris 15]:</span>
+                  ${akhir.penghasilan_neto_sebelumnya > 0 
+                    ? `<div class="text-[10px] text-amber-800 font-semibold mt-0.5">Diakumulasikan dari Bukti Potong sebelumnya dalam tahun berjalan</div>` 
+                    : `<div class="text-[10px] text-slate-400 mt-0.5">Pemotongan pertama / tidak ada pemotongan sebelumnya</div>`}
+                </div>
+                <span class="font-bold font-mono ${akhir.penghasilan_neto_sebelumnya > 0 ? 'text-amber-950 text-sm' : 'text-slate-500'}">
+                  ${akhir.penghasilan_neto_sebelumnya > 0 ? `+ ${formatRupiah(akhir.penghasilan_neto_sebelumnya)}` : 'Rp 0'}
+                </span>
+              </div>
+
+              <!-- Baris 16: Jumlah Penghasilan Neto Kumulatif -->
+              <div class="flex justify-between items-center py-2 border-b border-slate-200 text-xs bg-slate-100 px-2 rounded font-bold">
+                <span class="text-slate-900">Jumlah Neto untuk PPh 21 (Setahun / Disetahunkan) (14 + 15) [Baris 16]:</span>
+                <span class="font-mono text-slate-950">${formatRupiah(akhir.jumlah_penghasilan_neto_setahun)}</span>
+              </div>
+
               <div class="flex justify-between items-center py-2 border-b border-slate-100 text-xs">
-                <span class="text-slate-600">PTKP (${akhir.status_ptkp}):</span>
+                <span class="text-slate-600">PTKP (${akhir.status_ptkp}) [Baris 17]:</span>
                 <span class="font-bold font-mono text-slate-700">- ${formatRupiah(akhir.ptkp)}</span>
               </div>
               <div class="flex justify-between items-center py-2.5 border-t-2 border-slate-300 text-xs bg-emerald-50 px-2 rounded font-bold">
-                <span class="text-emerald-900">Penghasilan Kena Pajak (PKP Dibulatkan):</span>
+                <span class="text-emerald-900">Penghasilan Kena Pajak (PKP Dibulatkan) [Baris 18]:</span>
                 <span class="font-mono text-emerald-800 text-sm">${formatRupiah(akhir.pkp)}</span>
               </div>
             </div>
@@ -284,19 +304,32 @@ export function renderHasilRekonsiliasiView(): string {
                   </tbody>
                   <tfoot class="bg-slate-100 font-bold text-xs border-t border-slate-200">
                     <tr>
-                      <td colspan="3" class="py-2.5 px-3 text-slate-800">Total PPh 21 Terutang Masa ${akhir.kode_masa}:</td>
+                      <td colspan="3" class="py-2.5 px-3 text-slate-800">Total PPh 21 Terutang Setahun / Disetahunkan [Baris 19 & 20]:</td>
                       <td class="py-2.5 px-3 text-right font-mono text-blue-800 text-sm">${formatRupiah(akhir.pph21_pasal17_setahun)}</td>
                     </tr>
                   </tfoot>
                 </table>
               </div>
-              <div class="mt-3 p-3 bg-slate-50 rounded-lg text-[11px] text-slate-600 space-y-1">
+              <div class="mt-3 p-3 bg-slate-50 rounded-lg text-[11px] text-slate-600 space-y-1.5">
+                ${akhir.pph21_dipotong_sebelumnya > 0 ? `
+                  <div class="flex justify-between items-center bg-amber-50 px-2 py-1.5 rounded border border-amber-300">
+                    <div>
+                      <span class="font-bold text-amber-950">PPh 21 Dipotong dari Bukti Pemotongan Sebelumnya [Baris 21]:</span>
+                      <div class="text-[10px] text-amber-800 font-medium">Kredit pajak yang disetor pada bukti potong sebelumnya</div>
+                    </div>
+                    <span class="font-mono font-bold text-rose-700 text-xs">- ${formatRupiah(akhir.pph21_dipotong_sebelumnya)}</span>
+                  </div>
+                  <div class="flex justify-between items-center font-bold text-blue-950 bg-blue-50 px-2 py-1.5 rounded border border-blue-200">
+                    <span>PPh 21 Terutang pada Bukti Pemotongan Ini (20 - 21) [Baris 22]:</span>
+                    <span class="font-mono text-blue-900 text-xs">${formatRupiah(akhir.pph21_terutang_bukti_ini)}</span>
+                  </div>
+                ` : ''}
                 <div class="flex justify-between">
-                  <span>PPh 21 telah diperhitungkan masa ${akhir.bulan_mulai} s.d. ${akhir.bulan_akhir - 1}:</span>
+                  <span>PPh 21 yang Telah Dipotong (${akhir.bulan_mulai === akhir.bulan_akhir ? `Masa ${akhir.bulan_akhir}` : `Masa ${String(akhir.bulan_mulai).padStart(2, '0')} s.d. ${String(akhir.bulan_akhir - 1).padStart(2, '0')}`}) [Baris 23]:</span>
                   <span class="font-mono font-semibold">${formatRupiah(akhir.pajak_terutang_sebelumnya)}</span>
                 </div>
                 <div class="flex justify-between font-bold text-slate-900 border-t border-slate-200 pt-1">
-                  <span>PPh 21 Terutang Masa Terakhir (${akhir.nama_bulan_akhir}):</span>
+                  <span>PPh 21 Kurang (Lebih) Dipotong Masa Terakhir (${akhir.nama_bulan_akhir}) [Baris 24]:</span>
                   <span class="font-mono text-blue-700">${formatRupiah(akhir.pph21_terutang_bulan_terakhir)}</span>
                 </div>
                 <div class="flex justify-between text-slate-500 pt-0.5">
@@ -384,6 +417,29 @@ export function renderHasilRekonsiliasiView(): string {
               ${splitWithholdingRowsHtml}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Quick Navigation Card -->
+      <div class="bg-slate-900 text-white rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="max-w-2xl">
+          <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-400/30 mb-2">
+            Langkah 3 dari 4
+          </div>
+          <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">Langkah Selanjutnya</h4>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Hasil rekonsiliasi dan perhitungan PPh 21 Pasal 17 telah selesai. Lanjutkan ke menu <strong>Form 4: Cetak Formulir Bukti Potong 1721-BPA2</strong> untuk mencetak formulir resmi bukti potong atau mengunduh dokumen HTML mandiri.
+          </p>
+        </div>
+        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
+          <button id="btn-back-to-input-from-hasil" class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer">
+            <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            <span>Input Penghasilan</span>
+          </button>
+          <button id="btn-goto-bpa2-bottom" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition shrink-0 cursor-pointer">
+            <span>Buka Cetak Bukti Potong (BPA2)</span>
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </button>
         </div>
       </div>
     </div>

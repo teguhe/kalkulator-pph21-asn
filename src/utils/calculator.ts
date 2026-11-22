@@ -94,6 +94,10 @@ export function calculatePPh21(pegawai: PegawaiData, periode: PeriodeBulan[]): R
   // Track cumulative tax owed from non-akhir months within the current active period
   let akumulasiPajakTerutangPeriode = 0;
 
+  // Track cumulative net income & previous Bukti Pemotongan tax across multiple Akhir Periode in the same tax year
+  let prevAccumulatedNeto = 0;
+  let prevAccumulatedPph21TerutangBukti = 0;
+
   for (let i = 0; i < periode.length; i++) {
     const bulan = periode[i];
     const kp = bulan.komponen_penghasilan;
@@ -175,34 +179,56 @@ export function calculatePPh21(pegawai: PegawaiData, periode: PeriodeBulan[]): R
         total_pajak_sudah_dipotong_periode += mp;
       }
 
-      // Biaya Jabatan: 5% dari Bruto, maksimal 500rb/bulan x jumlah_bulan (maks 6jt/thn)
+      // Baris 10: Biaya Jabatan: 5% dari Bruto periode ini, maksimal 500rb/bulan x jumlah_bulan periode ini (maks 6jt/thn)
       const max_biaya_jabatan = Math.min(jumlah_bulan * BIAYA_JABATAN_CONFIG.MAX_BULANAN, BIAYA_JABATAN_CONFIG.MAX_TAHUNAN);
       const biaya_jabatan = Math.min(Math.floor(total_bruto_akumulasi * BIAYA_JABATAN_CONFIG.RATE), max_biaya_jabatan);
 
-      // Iuran Pensiun: % dari Gaji Pokok & Tunjangan Melekat
+      // Baris 11: Iuran Pensiun: % dari Gaji Pokok & Tunjangan Melekat periode ini
       const persenPensiun = typeof pegawai.persen_iuran_pensiun === 'number' ? pegawai.persen_iuran_pensiun : 4.75;
       const iuran_pensiun = Math.floor(total_gaji_akumulasi * (persenPensiun / 100));
 
+      // Baris 13: Total Pengurang periode ini
       const total_pengurang = biaya_jabatan + iuran_pensiun;
+
+      // Baris 14: Jumlah Penghasilan Neto periode ini (9 - 13)
       const penghasilan_neto = Math.max(0, total_bruto_akumulasi - total_pengurang);
 
-      // PTKP Tahunan
+      // Baris 15: Penghasilan Neto dari Pemotongan Sebelumnya
+      // Diakumulasikan dari bukti pemotongan sebelumnya dalam satu tahun pajak berjalan (PER-2/PJ/2024)
+      const penghasilan_neto_sebelumnya = typeof bulan.penghasilan_neto_sebelumnya === 'number'
+        ? bulan.penghasilan_neto_sebelumnya
+        : prevAccumulatedNeto;
+
+      // Baris 16: Jumlah Penghasilan Neto untuk Perhitungan PPh Pasal 21 (Setahun / Disetahunkan) (14 + 15)
+      const jumlah_penghasilan_neto_setahun = penghasilan_neto + penghasilan_neto_sebelumnya;
+
+      // Baris 17: PTKP Tahunan
       const ptkpConfig = PTKP_MAP[pegawai.status_ptkp as keyof typeof PTKP_MAP] || PTKP_MAP['TK/0'];
       const ptkp = ptkpConfig.nilaiTahunan;
 
-      // PKP (dibulatkan ribuan ke bawah)
-      const pkp_raw = penghasilan_neto - ptkp;
+      // Baris 18: PKP Setahun / Disetahunkan (16 - 17) (dibulatkan ribuan ke bawah)
+      const pkp_raw = jumlah_penghasilan_neto_setahun - ptkp;
       const pkp = pkp_raw > 0 ? Math.floor(pkp_raw / 1000) * 1000 : 0;
 
-      // Hitung PPh 21 Pasal 17 & Lapisan Breakdown
+      // Baris 19 & 20: Hitung PPh 21 Pasal 17 Setahun & Lapisan Breakdown
       const { totalTax: pph21_pasal17_setahun, layers } = calculatePasal17Detailed(pkp);
 
-      // PPh 21 Terutang di Bulan Akhir Periode ini:
-      // = PPh 21 Pasal 17 Periode ini - Pajak yang telah terutang pada bulan-bulan sebelumnya dalam segmen periode ini
+      // Baris 21: PPh Pasal 21 Dipotong dari Bukti Pemotongan Sebelumnya
+      const pph21_dipotong_sebelumnya = typeof bulan.pph21_dipotong_sebelumnya === 'number'
+        ? bulan.pph21_dipotong_sebelumnya
+        : prevAccumulatedPph21TerutangBukti;
+
+      // Baris 22: PPh Pasal 21 Terutang pada Bukti Pemotongan Ini (Dapat Dikreditkan Pada SPT Tahunan) (20 - 21)
+      const pph21_terutang_bukti_ini = pph21_pasal17_setahun - pph21_dipotong_sebelumnya;
+
+      // Baris 23: PPh Pasal 21 yang Telah Dipotong (pada bulan-bulan non-akhir di segmen periode ini)
       const pajak_terutang_sebelumnya = akumulasiPajakTerutangPeriode;
-      const pph21_terutang_bulan_terakhir = pph21_pasal17_setahun - pajak_terutang_sebelumnya;
+
+      // Baris 24: PPh Pasal 21 Kurang (Lebih) Dipotong pada Masa Pajak Terakhir (22 - 23)
+      const pph21_terutang_bulan_terakhir = pph21_terutang_bukti_ini - pajak_terutang_sebelumnya;
+
       const selisih_bulan_ini = pph21_terutang_bulan_terakhir - pajak_sudah_dipotong;
-      const selisih_periode = pph21_pasal17_setahun - total_pajak_sudah_dipotong_periode;
+      const selisih_periode = pph21_terutang_bukti_ini - total_pajak_sudah_dipotong_periode;
 
       // Split withholding khusus segmen periode ini
       const rekapPeriode = calculateSplitWithholdingForMonths(monthsInThisPeriod, pegawai);
@@ -224,10 +250,14 @@ export function calculatePPh21(pegawai: PegawaiData, periode: PeriodeBulan[]): R
         iuran_pensiun,
         total_pengurang,
         penghasilan_neto,
+        penghasilan_neto_sebelumnya,
+        jumlah_penghasilan_neto_setahun,
         ptkp,
         status_ptkp: pegawai.status_ptkp,
         pkp,
         pph21_pasal17_setahun,
+        pph21_dipotong_sebelumnya,
+        pph21_terutang_bukti_ini,
         pajak_terutang_sebelumnya,
         pph21_terutang_bulan_terakhir,
         total_pajak_sudah_dipotong_tahunan: total_pajak_sudah_dipotong_periode,
@@ -255,7 +285,9 @@ export function calculatePPh21(pegawai: PegawaiData, periode: PeriodeBulan[]): R
         }
       });
 
-      // Advance start month index and reset period accumulator for the subsequent period
+      // Advance start month index and update accumulators for the subsequent period
+      prevAccumulatedNeto += penghasilan_neto;
+      prevAccumulatedPph21TerutangBukti += pph21_terutang_bukti_ini;
       startMonthIndex = i + 1;
       akumulasiPajakTerutangPeriode = 0;
     }

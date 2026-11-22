@@ -288,22 +288,45 @@ export function renderInputPenghasilanView(): string {
         <!-- Footer Tools & Actions -->
         <div class="p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div class="flex items-center gap-2 w-full sm:w-auto">
-            <button id="btn-copy-month" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg transition shadow-xs">
+            <button id="btn-copy-month" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg transition shadow-xs cursor-pointer">
               <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
               <span>Salin Bulan Ini ke Bulan Berikutnya</span>
             </button>
-            <button id="btn-clear-month" class="inline-flex items-center justify-center gap-1 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition">
+            <button id="btn-clear-month" class="inline-flex items-center justify-center gap-1 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition cursor-pointer">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
               <span>Kosongkan Bulan</span>
             </button>
           </div>
 
           <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-            <button id="btn-recalculate-tax" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-xl shadow-sm transition">
+            <button id="btn-recalculate-tax" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-xl shadow-sm transition cursor-pointer">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
               <span>Hitung Ulang & Rekonsiliasi Pajak</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- Quick Navigation Card -->
+      <div class="bg-slate-900 text-white rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="max-w-2xl">
+          <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30 mb-2">
+            Langkah 2 dari 4
+          </div>
+          <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">Langkah Selanjutnya</h4>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Setelah menginput atau menyalin penghasilan bulanan, klik tombol <strong>Hitung Ulang</strong> untuk memperbarui fiskal tahunan, lalu buka <strong>Form 3: Hasil &amp; Rekonsiliasi</strong> untuk memeriksa rincian lapisan tarif dan selisih pajak.
+          </p>
+        </div>
+        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
+          <button id="btn-back-to-pegawai-from-input" class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer">
+            <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            <span>Data Pegawai</span>
+          </button>
+          <button id="btn-goto-hasil-from-input" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition shrink-0 cursor-pointer">
+            <span>Buka Hasil &amp; Rekonsiliasi</span>
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </button>
         </div>
       </div>
     </div>

@@ -43,6 +43,8 @@ export interface PeriodeBulan {
   nama_bulan: string;
   metode_perhitungan: MetodePerhitungan;
   is_akhir_periode: boolean;
+  penghasilan_neto_sebelumnya?: number; // Optional override untuk Baris 15 BPA2
+  pph21_dipotong_sebelumnya?: number; // Optional override untuk Baris 21 BPA2
   komponen_penghasilan: KomponenPenghasilan;
 }
 
@@ -92,24 +94,28 @@ export interface HasilAkhirPeriode {
   nama_bulan_akhir: string;
   kode_masa: string; // e.g. '01 - 04' or '01 - 12'
   jumlah_bulan: number;
-  total_bruto_akumulasi: number;
-  total_gaji_akumulasi: number;
+  total_bruto_akumulasi: number; // Baris 9
+  total_gaji_akumulasi: number; // Baris 1
   total_tpp_akumulasi?: number;
   total_honor1_akumulasi?: number;
   total_honor2_akumulasi?: number;
-  biaya_jabatan: number;
+  biaya_jabatan: number; // Baris 10
   max_biaya_jabatan: number;
-  iuran_pensiun: number;
-  total_pengurang: number;
-  penghasilan_neto: number;
-  ptkp: number;
+  iuran_pensiun: number; // Baris 11
+  total_pengurang: number; // Baris 13
+  penghasilan_neto: number; // Baris 14: Jumlah Penghasilan Neto masa ini (9 - 13)
+  penghasilan_neto_sebelumnya: number; // Baris 15: Penghasilan Neto dari Pemotongan Sebelumnya
+  jumlah_penghasilan_neto_setahun: number; // Baris 16: Jumlah Penghasilan Neto untuk Perhitungan PPh 21 (Setahun / Disetahunkan) (14 + 15)
+  ptkp: number; // Baris 17: PTKP
   status_ptkp: StatusPTKP;
-  pkp: number;
-  pph21_pasal17_setahun: number;
-  pajak_terutang_sebelumnya: number; // bulan 1 s.d. (m-1)
-  pph21_terutang_bulan_terakhir: number; // pph21_setahun - pajak_terutang_sebelumnya
+  pkp: number; // Baris 18: PKP Setahun / Disetahunkan (16 - 17)
+  pph21_pasal17_setahun: number; // Baris 19 & 20: PPh 21 Terutang Setahun / Disetahunkan
+  pph21_dipotong_sebelumnya: number; // Baris 21: PPh 21 Dipotong dari Bukti Pemotongan Sebelumnya
+  pph21_terutang_bukti_ini: number; // Baris 22: PPh 21 Terutang pada Bukti Pemotongan Ini (20 - 21)
+  pajak_terutang_sebelumnya: number; // Baris 23: PPh 21 yang Telah Dipotong (pada bulan non-akhir di periode ini)
+  pph21_terutang_bulan_terakhir: number; // Baris 24: PPh 21 Kurang (Lebih) Dipotong pada Masa Terakhir (22 - 23)
   total_pajak_sudah_dipotong_tahunan: number;
-  selisih_tahunan: number; // pph21_pasal17_setahun - total_pajak_sudah_dipotong_tahunan
+  selisih_tahunan: number; // pph21_terutang_bukti_ini - total_pajak_sudah_dipotong_tahunan
   lapisan_breakdown: LapisanPajakDetail[];
   rekap_bendahara_periode?: RekapitulasiBendahara[];
 }

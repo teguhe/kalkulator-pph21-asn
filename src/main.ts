@@ -628,12 +628,30 @@ function attachInputListeners(): void {
       appState.notify();
     }
   });
+
+  // Quick Navigation Buttons (Form 2)
+  document.getElementById('btn-back-to-pegawai-from-input')?.addEventListener('click', () => {
+    appState.setActiveTab('pegawai');
+  });
+  document.getElementById('btn-goto-hasil-from-input')?.addEventListener('click', () => {
+    appState.setActiveTab('hasil');
+  });
 }
 
 function attachHasilListeners(): void {
   const btnGotoBpa2 = document.getElementById('btn-goto-bpa2-tab');
   btnGotoBpa2?.addEventListener('click', () => {
     appState.setActiveTab('bpa2');
+  });
+
+  const btnGotoBpa2Bottom = document.getElementById('btn-goto-bpa2-bottom');
+  btnGotoBpa2Bottom?.addEventListener('click', () => {
+    appState.setActiveTab('bpa2');
+  });
+
+  const btnBackToInput = document.getElementById('btn-back-to-input-from-hasil');
+  btnBackToInput?.addEventListener('click', () => {
+    appState.setActiveTab('input');
   });
 
   // Period Switcher Tab Buttons
@@ -718,6 +736,17 @@ function attachBpa2Listeners(): void {
     a.click();
     URL.revokeObjectURL(url);
     appState.showToast('success', 'File Diunduh', `Formulir BPA2 mandiri (${ap ? ap.kode_masa : ''}) telah diunduh sebagai ${a.download}.`);
+  });
+
+  // Quick Navigation Buttons (Form 4)
+  document.getElementById('btn-goto-hasil-from-bpa2')?.addEventListener('click', () => {
+    appState.setActiveTab('hasil');
+  });
+  document.getElementById('btn-goto-pegawai-from-bpa2')?.addEventListener('click', () => {
+    appState.setActiveTab('pegawai');
+  });
+  document.getElementById('btn-goto-faq-from-bpa2')?.addEventListener('click', () => {
+    appState.setActiveTab('faq');
   });
 }
 
