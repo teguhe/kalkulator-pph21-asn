@@ -6,15 +6,17 @@
   }
 }
 
-/* Print styles for BPA2 */
+/* Print styles for BPA2 & TER Bulanan */
 @media print {
   body * {
     visibility: hidden;
   }
-  #bpa2-print-container, #bpa2-print-container * {
+  #bpa2-print-container, #bpa2-print-container *,
+  #ter-print-container, #ter-print-container * {
     visibility: visible;
   }
-  #bpa2-print-container {
+  #bpa2-print-container, #ter-print-container {
+    display: block !important;
     position: absolute;
     left: 0;
     top: 0;

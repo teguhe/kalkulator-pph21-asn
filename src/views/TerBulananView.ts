@@ -1,12 +1,16 @@
 import { appState } from '../state/appState';
 import { PTKP_MAP } from '../../taxConstants';
-import { formatNumber, formatRupiah } from '../utils/formatters';
+import { formatNumber, formatRupiah, formatNPWP, formatDateIndo } from '../utils/formatters';
 
 export function renderTerBulananView(): string {
   const { dataset, terBulananInput } = appState;
   const p = dataset.pegawai;
   const ptkpInfo = PTKP_MAP[p.status_ptkp as keyof typeof PTKP_MAP] || PTKP_MAP['TK/0'];
   const calc = appState.getTerBulananCalculation();
+
+  const currentYear = new Date().getFullYear();
+  const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  const currentMonthName = months[new Date().getMonth()];
 
   // Opsi PTKP Dropdown (Sama dengan Form 1)
   const ptkpOptionsHtml = Object.keys(PTKP_MAP).map(key => {
@@ -91,13 +95,13 @@ export function renderTerBulananView(): string {
 
   return `
     <div class="space-y-6">
-      <!-- Title Card -->
-      <div class="bg-linear-to-r from-emerald-800 via-teal-800 to-slate-900 rounded-2xl p-6 text-white shadow-md relative overflow-hidden">
+      <!-- Title Card (Hidden in Print) -->
+      <div class="bg-linear-to-r from-emerald-800 via-teal-800 to-slate-900 rounded-2xl p-6 text-white shadow-md relative overflow-hidden no-print">
         <div class="relative z-10 space-y-4">
           <div>
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold mb-2">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>
               Kalkulator Cepat Bulanan
             </div>
@@ -109,7 +113,7 @@ export function renderTerBulananView(): string {
             </p>
           </div>
 
-          <!-- Quick Action Buttons (Dipindahkan ke bawah text) -->
+          <!-- Quick Action Buttons -->
           <div class="pt-3 border-t border-white/10 flex flex-wrap items-center gap-2">
             <input type="file" id="ter-json-file-input" accept=".json,application/json" class="hidden" />
 
@@ -141,8 +145,15 @@ export function renderTerBulananView(): string {
               <span>Reset</span>
             </button>
 
-            <button id="btn-ter-print" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all cursor-pointer" title="Cetak Ringkasan">
+            <button id="btn-ter-download-html" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all cursor-pointer" title="Unduh Lembar Ringkasan TER Bulanan sebagai dokumen HTML mandiri">
               <svg class="w-4 h-4 text-teal-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <span>Unduh HTML</span>
+            </button>
+
+            <button id="btn-ter-print" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-sm transition-all cursor-pointer" title="Cetak Lembar Ringkasan A4">
+              <svg class="w-4 h-4 text-slate-950" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
               </svg>
               <span>Cetak Ringkasan</span>
@@ -151,8 +162,8 @@ export function renderTerBulananView(): string {
         </div>
       </div>
 
-      <!-- Section 1: Data Pegawai & Status PTKP / TER (Tersinkronisasi dengan Form 1) -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+      <!-- Section 1: Data Pegawai & Status PTKP / TER (Tersinkronisasi dengan Form 1) - Hidden in Print -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4 no-print">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-slate-100 gap-2">
           <div class="flex items-center gap-2">
             <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs">1</span>
@@ -208,8 +219,8 @@ export function renderTerBulananView(): string {
         </div>
       </div>
 
-      <!-- Section 2: Input 4 Komponen Penghasilan Bulanan -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+      <!-- Section 2: Input 4 Komponen Penghasilan Bulanan - Hidden in Print -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4 no-print">
         <div class="flex items-center gap-2 pb-3 border-b border-slate-100">
           <span class="w-7 h-7 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-xs">2</span>
           <div>
@@ -349,7 +360,7 @@ export function renderTerBulananView(): string {
 
           <button id="btn-ter-calculate" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs sm:text-sm shadow-sm hover:shadow transition cursor-pointer">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
             <span>Hitung PPh 21 Bulanan</span>
           </button>
@@ -357,7 +368,7 @@ export function renderTerBulananView(): string {
       </div>
 
       ${appState.isTerBulananDirty && calc ? `
-        <div class="bg-amber-50 border border-amber-300 text-amber-900 px-4 py-3 rounded-xl text-xs flex items-center justify-between gap-3 shadow-xs">
+        <div class="bg-amber-50 border border-amber-300 text-amber-900 px-4 py-3 rounded-xl text-xs flex items-center justify-between gap-3 shadow-xs no-print">
           <div class="flex items-center gap-2.5">
             <span class="text-base">⚠️</span>
             <span>Nilai penghasilan telah diubah. Hasil di bawah merupakan perhitungan sebelumnya. Klik <strong>Hitung PPh 21 Bulanan</strong> untuk memperbarui hasil perhitungan.</span>
@@ -365,8 +376,8 @@ export function renderTerBulananView(): string {
         </div>
       ` : ''}
 
-      <!-- Section 3: Tabel Rincian Perhitungan Masing-Masing Penghasilan -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+      <!-- Section 3: Tabel Rincian Perhitungan Masing-Masing Penghasilan - Hidden in Print -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4 no-print">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
           <div class="flex items-center gap-2">
             <span class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-800 flex items-center justify-center font-bold text-xs">3</span>
@@ -443,8 +454,8 @@ export function renderTerBulananView(): string {
         </div>
       </div>
 
-      <!-- Section 4: Hasil Perhitungan Pajak Ketika Keempat Penghasilan Digabung -->
-      <div class="bg-linear-to-br from-slate-900 via-slate-800 to-teal-950 text-white rounded-2xl p-6 shadow-md space-y-5">
+      <!-- Section 4: Hasil Perhitungan Pajak Ketika Keempat Penghasilan Digabung - Hidden in Print -->
+      <div class="bg-linear-to-br from-slate-900 via-slate-800 to-teal-950 text-white rounded-2xl p-6 shadow-md space-y-5 no-print">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-white/10 gap-2">
           <div class="flex items-center gap-2">
             <span class="w-7 h-7 rounded-lg bg-emerald-400 text-slate-950 flex items-center justify-center font-bold text-xs">4</span>
@@ -499,47 +510,275 @@ export function renderTerBulananView(): string {
         </div>
       </div>
 
-      <!-- Section 5: Analisis Komparasi Selisih (Terpisah vs Gabungan Sebulan) -->
-      <div class="space-y-4">
-        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
-          <div class="flex items-center gap-2 pb-3 border-b border-slate-100">
-            <span class="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">5</span>
+      <!-- Section 5: Analisis Komparasi Selisih (Terpisah vs Gabungan Sebulan) - Hidden in Print -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4 no-print">
+        <div class="flex items-center gap-2 pb-3 border-b border-slate-100">
+          <span class="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">5</span>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">
+              Analisis &amp; Komparasi Selisih (Terpisah vs Gabungan)
+            </h3>
+            <p class="text-[11px] text-slate-500">Perbandingan antara potongan riil oleh masing-masing bendahara dengan pajak terutang seharusnya</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <div class="text-xs font-semibold text-slate-500 mb-1">A. Pajak Dipotong Terpisah</div>
+            <div class="text-lg font-bold text-slate-800 font-mono">${calc ? formatRupiah(calc.total_pajak_terpisah) : 'Rp -'}</div>
+            <p class="text-[11px] text-slate-500 mt-1">Total potongan oleh 4 bendahara/kegiatan secara parsial</p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <div class="text-xs font-semibold text-slate-500 mb-1">B. Pajak Terutang Gabungan Sebulan</div>
+            <div class="text-lg font-bold text-rose-700 font-mono">${calc ? formatRupiah(calc.pajak_gabungan) : 'Rp -'}</div>
+            <p class="text-[11px] text-slate-500 mt-1">${calc ? `Sesuai PP 58/2023 atas total bruto ${formatRupiah(calc.bruto_sebulan)}` : 'Sesuai PP 58/2023'}</p>
+          </div>
+
+          <div class="p-4 rounded-xl ${calc && calc.selisih > 0 ? 'bg-amber-50 border border-amber-300' : 'bg-emerald-50 border border-emerald-300'}">
+            <div class="text-xs font-semibold ${calc && calc.selisih > 0 ? 'text-amber-800' : 'text-emerald-800'} mb-1">
+              Selisih (B - A)
+            </div>
+            <div class="text-lg font-bold font-mono ${calc && calc.selisih > 0 ? 'text-amber-900' : 'text-emerald-900'}">
+              ${calc ? `${calc.selisih > 0 ? '+' : ''}${formatRupiah(calc.selisih)}` : 'Rp -'}
+            </div>
+            <p class="text-[11px] ${calc && calc.selisih > 0 ? 'text-amber-700' : 'text-emerald-700'} mt-1">
+              ${calc ? (calc.selisih > 0 ? 'Potensi kurang potong bulanan' : calc.selisih === 0 ? 'Pemotongan telah sesuai nihil' : 'Potensi lebih potong') : 'Menunggu perhitungan'}
+            </p>
+          </div>
+        </div>
+
+        ${selisihCardHtml}
+      </div>
+
+      <!-- Section 6: Toolbar Pratinjau Dokumen Cetak - Hidden in Print -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs no-print">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-xs">6</span>
             <div>
               <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                Analisis &amp; Komparasi Selisih (Terpisah vs Gabungan)
+                Dokumen Ringkasan Resmi Siap Cetak (A4)
               </h3>
-              <p class="text-[11px] text-slate-500">Perbandingan antara potongan riil oleh masing-masing bendahara dengan pajak terutang seharusnya</p>
+              <p class="text-[11px] text-slate-500">Pratinjau lembar cetak ringkasan PPh 21 bulanan sesuai PP 58/2023 &amp; PMK 168/2023</p>
             </div>
           </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
-              <div class="text-xs font-semibold text-slate-500 mb-1">A. Pajak Dipotong Terpisah</div>
-              <div class="text-lg font-bold text-slate-800 font-mono">${calc ? formatRupiah(calc.total_pajak_terpisah) : 'Rp -'}</div>
-              <p class="text-[11px] text-slate-500 mt-1">Total potongan oleh 4 bendahara/kegiatan secara parsial</p>
-            </div>
-
-            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
-              <div class="text-xs font-semibold text-slate-500 mb-1">B. Pajak Terutang Gabungan Sebulan</div>
-              <div class="text-lg font-bold text-rose-700 font-mono">${calc ? formatRupiah(calc.pajak_gabungan) : 'Rp -'}</div>
-              <p class="text-[11px] text-slate-500 mt-1">${calc ? `Sesuai PP 58/2023 atas total bruto ${formatRupiah(calc.bruto_sebulan)}` : 'Sesuai PP 58/2023'}</p>
-            </div>
-
-            <div class="p-4 rounded-xl ${calc && calc.selisih > 0 ? 'bg-amber-50 border border-amber-300' : 'bg-emerald-50 border border-emerald-300'}">
-              <div class="text-xs font-semibold ${calc && calc.selisih > 0 ? 'text-amber-800' : 'text-emerald-800'} mb-1">
-                Selisih (B - A)
-              </div>
-              <div class="text-lg font-bold font-mono ${calc && calc.selisih > 0 ? 'text-amber-900' : 'text-emerald-900'}">
-                ${calc ? `${calc.selisih > 0 ? '+' : ''}${formatRupiah(calc.selisih)}` : 'Rp -'}
-              </div>
-              <p class="text-[11px] ${calc && calc.selisih > 0 ? 'text-amber-700' : 'text-emerald-700'} mt-1">
-                ${calc ? (calc.selisih > 0 ? 'Potensi kurang potong bulanan' : calc.selisih === 0 ? 'Pemotongan telah sesuai nihil' : 'Potensi lebih potong') : 'Menunggu perhitungan'}
-              </p>
-            </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button id="btn-ter-download-html-bottom" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 transition-all cursor-pointer shadow-xs">
+              <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Unduh File HTML</span>
+            </button>
+            <button id="btn-ter-print-bottom" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-xs transition-all cursor-pointer">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+              <span>Cetak Ringkasan (A4)</span>
+            </button>
           </div>
-
-          ${selisihCardHtml}
         </div>
+      </div>
+
+      <!-- Printable TER Container (On Screen: Clean Document Paper Preview | On Print: Full A4 Page) -->
+      <div id="ter-print-container" class="bg-white rounded-2xl border border-slate-300 shadow-md p-6 sm:p-8 max-w-4xl mx-auto text-slate-900 font-sans space-y-4">
+        
+        <!-- HEADER DOKUMEN -->
+        <div class="border-b-2 border-slate-900 pb-3 text-slate-950">
+          <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-linear-to-br from-emerald-600 to-teal-700 text-white rounded-lg flex items-center justify-center font-black text-sm shadow-xs shrink-0 border border-slate-900">
+                ASN
+              </div>
+              <div>
+                <div class="text-[11px] font-bold uppercase tracking-wider text-slate-800">
+                  ${p.instansi?.nama_instansi ? p.instansi.nama_instansi.toUpperCase() : 'PEMERINTAH DAERAH / INSTANSI PEMERINTAH'}
+                </div>
+                <h2 class="text-sm sm:text-base font-black uppercase tracking-tight text-slate-950 mt-0.5">
+                  LEMBAR SIMULASI &amp; RINGKASAN PEMOTONGAN PPh PASAL 21 BULANAN
+                </h2>
+                <div class="text-[10px] text-slate-600 font-medium">
+                  Sesuai Ketentuan PP No. 58 Tahun 2023 &amp; PMK No. 168 Tahun 2023 (Skema Tarif Efektif Rata-Rata)
+                </div>
+              </div>
+            </div>
+            <div class="text-right text-[10px] font-mono text-slate-600 shrink-0 border-l border-slate-200 pl-3">
+              <div>Masa: <strong>${currentMonthName} ${currentYear}</strong></div>
+              <div>Tanggal Cetak: <strong>${formatDateIndo()}</strong></div>
+              <div>Kategori: <strong>TER ${p.kategori_ter}</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BAGIAN I: IDENTITAS PEGAWAI & PARAMETER TER -->
+        <div>
+          <div class="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-1.5 flex items-center justify-between">
+            <span>I. IDENTITAS PEGAWAI &amp; PARAMETER PAJAK</span>
+            <span class="text-[10px] text-slate-300 font-normal">Data Pegawai ASN</span>
+          </div>
+          <div class="border border-slate-300 rounded p-3 bg-slate-50/60 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+              <div class="flex">
+                <span class="w-36 text-slate-500 font-medium">Nama Lengkap</span>
+                <span class="w-3 font-bold">:</span>
+                <span class="font-bold text-slate-900 flex-1">${p.nama || '(Belum Diisi)'}</span>
+              </div>
+              <div class="flex">
+                <span class="w-36 text-slate-500 font-medium">Status PTKP</span>
+                <span class="w-3 font-bold">:</span>
+                <span class="font-bold text-slate-900 flex-1">${p.status_ptkp} (${formatRupiah(ptkpInfo.nilaiTahunan)} / thn)</span>
+              </div>
+              <div class="flex">
+                <span class="w-36 text-slate-500 font-medium">NIP</span>
+                <span class="w-3 font-bold">:</span>
+                <span class="font-mono text-slate-900 flex-1">${p.nip || '-'}</span>
+              </div>
+              <div class="flex">
+                <span class="w-36 text-slate-500 font-medium">Kategori TER</span>
+                <span class="w-3 font-bold">:</span>
+                <span class="font-bold text-emerald-800 flex-1">Kategori TER ${p.kategori_ter}</span>
+              </div>
+              <div class="flex">
+                <span class="w-36 text-slate-500 font-medium">Instansi / Unit Kerja</span>
+                <span class="w-3 font-bold">:</span>
+                <span class="text-slate-800 flex-1">${p.instansi?.nama_instansi || '-'}</span>
+              </div>
+              <div class="flex">
+                <span class="w-36 text-slate-500 font-medium">NPWP Pemotong</span>
+                <span class="w-3 font-bold">:</span>
+                <span class="font-mono text-slate-800 flex-1">${formatNPWP(p.instansi?.npwp_instansi_utama || '') || '-'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BAGIAN II: RINCIAN PENGHASILAN DAN PEMOTONGAN TERPISAH (PARSIAL) -->
+        <div>
+          <div class="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-1.5 flex items-center justify-between">
+            <span>II. RINCIAN PENGHASILAN &amp; PEMOTONGAN PARSIAL (OLEH MASING-MASING BENDAHARA)</span>
+            <span class="text-[10px] text-slate-300 font-normal">Pemotongan Terpisah</span>
+          </div>
+          <div class="border border-slate-300 rounded overflow-hidden text-xs">
+            <table class="w-full">
+              <thead class="bg-slate-100 border-b border-slate-300 font-semibold text-slate-700">
+                <tr>
+                  <th class="py-1.5 px-2 text-center w-8 border-r border-slate-300">No</th>
+                  <th class="py-1.5 px-3 text-left border-r border-slate-300">Komponen Penghasilan</th>
+                  <th class="py-1.5 px-3 text-right border-r border-slate-300">Bruto (Rp)</th>
+                  <th class="py-1.5 px-2 text-center w-20 border-r border-slate-300">Tarif TER</th>
+                  <th class="py-1.5 px-3 text-right border-r border-slate-300">PPh 21 Dipotong</th>
+                  <th class="py-1.5 px-3 text-right">Penghasilan Netto</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200">
+                ${calc ? calc.items.map((item, idx) => `
+                  <tr>
+                    <td class="py-1.5 px-2 text-center font-mono text-slate-500 border-r border-slate-200">${idx + 1}</td>
+                    <td class="py-1.5 px-3 font-medium text-slate-900 border-r border-slate-200">${item.nama}</td>
+                    <td class="py-1.5 px-3 text-right font-mono border-r border-slate-200">${formatNumber(item.bruto)}</td>
+                    <td class="py-1.5 px-2 text-center font-bold text-emerald-700 border-r border-slate-200">${item.ter_rate}%</td>
+                    <td class="py-1.5 px-3 text-right font-mono font-semibold ${item.pajak > 0 ? 'text-rose-700' : 'text-slate-600'} border-r border-slate-200">${formatNumber(item.pajak)}</td>
+                    <td class="py-1.5 px-3 text-right font-mono font-semibold text-slate-800">${formatNumber(item.netto)}</td>
+                  </tr>
+                `).join('') : `
+                  <tr>
+                    <td colspan="6" class="py-4 text-center text-slate-400 italic">Belum ada perhitungan. Masukkan data dan klik tombol Hitung PPh 21 Bulanan.</td>
+                  </tr>
+                `}
+              </tbody>
+              <tfoot class="bg-slate-100 font-bold border-t-2 border-slate-400 text-slate-900">
+                <tr>
+                  <td colspan="2" class="py-2 px-3 text-right border-r border-slate-300 uppercase text-[11px]">
+                    TOTAL PEMOTONGAN TERPISAH (A):
+                  </td>
+                  <td class="py-2 px-3 text-right font-mono border-r border-slate-300 text-slate-950 font-extrabold">
+                    ${calc ? formatNumber(calc.total_bruto_terpisah) : '-'}
+                  </td>
+                  <td class="py-2 px-2 text-center border-r border-slate-300 text-slate-400">-</td>
+                  <td class="py-2 px-3 text-right font-mono border-r border-slate-300 text-rose-700 font-extrabold">
+                    ${calc ? formatNumber(calc.total_pajak_terpisah) : '-'}
+                  </td>
+                  <td class="py-2 px-3 text-right font-mono text-slate-950 font-extrabold">
+                    ${calc ? formatNumber(calc.total_netto_terpisah) : '-'}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- BAGIAN III: PENGHITUNGAN PPh 21 TER GABUNGAN SEBULAN (KETENTUAN RESMI PMK 168/2023) -->
+        <div>
+          <div class="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-1.5 flex items-center justify-between">
+            <span>III. PENGHITUNGAN PPh 21 TER GABUNGAN SEBULAN (KETENTUAN PMK 168/2023)</span>
+            <span class="text-[10px] text-slate-300 font-normal">Tarif Akumulasi Masa Sebulan</span>
+          </div>
+          <div class="border border-slate-300 rounded overflow-hidden text-xs">
+            <table class="w-full">
+              <tbody class="divide-y divide-slate-200">
+                <tr>
+                  <td class="py-1.5 px-3 text-slate-700 font-medium">1. Total Seluruh Penghasilan Bruto Diterima Sebulan (Akumulasi 4 Komponen)</td>
+                  <td class="py-1.5 px-3 text-right font-mono font-bold text-slate-900 w-44">${calc ? formatRupiah(calc.bruto_sebulan) : '-'}</td>
+                </tr>
+                <tr>
+                  <td class="py-1.5 px-3 text-slate-700 font-medium">2. Tarif Efektif Rata-Rata (TER) Bulanan Gabungan (Kategori ${p.kategori_ter})</td>
+                  <td class="py-1.5 px-3 text-right font-mono font-bold text-emerald-800 w-44">${calc ? `${calc.ter_rate_gabungan}%` : '-'}</td>
+                </tr>
+                <tr class="bg-rose-50/60 font-semibold">
+                  <td class="py-1.5 px-3 text-rose-950">3. Nominal PPh Pasal 21 Terutang Seharusnya Sebulan (B)</td>
+                  <td class="py-1.5 px-3 text-right font-mono font-bold text-rose-700 w-44">${calc ? formatRupiah(calc.pajak_gabungan) : '-'}</td>
+                </tr>
+                <tr>
+                  <td class="py-1.5 px-3 text-slate-700 font-medium">4. Penghasilan Netto Riil Diterima Sebulan Setelah Pajak (1 - 3)</td>
+                  <td class="py-1.5 px-3 text-right font-mono font-bold text-slate-900 w-44">${calc ? formatRupiah(calc.netto_gabungan) : '-'}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- BAGIAN IV: ANALISIS & KOMPARASI SELISIH FISKAL -->
+        <div>
+          <div class="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-1.5 flex items-center justify-between">
+            <span>IV. ANALISIS &amp; KOMPARASI SELISIH FISKAL</span>
+            <span class="text-[10px] text-slate-300 font-normal">Potensi Kurang / Lebih Bayar</span>
+          </div>
+          <div class="border border-slate-300 rounded p-3 bg-slate-50 text-xs space-y-1.5">
+            <div class="flex justify-between items-center text-slate-700">
+              <span>Total Pajak Dipotong Terpisah oleh Para Bendahara (A):</span>
+              <span class="font-mono font-bold text-slate-900">${calc ? formatRupiah(calc.total_pajak_terpisah) : '-'}</span>
+            </div>
+            <div class="flex justify-between items-center text-slate-700">
+              <span>Total PPh 21 Terutang Gabungan Sesuai PMK 168/2023 (B):</span>
+              <span class="font-mono font-bold text-slate-900">${calc ? formatRupiah(calc.pajak_gabungan) : '-'}</span>
+            </div>
+            <div class="flex justify-between items-center py-1 border-t border-slate-300 font-bold text-sm">
+              <span>Selisih Fiskal Bulanan (B - A):</span>
+              <span class="font-mono ${calc && calc.selisih > 0 ? 'text-amber-800' : calc && calc.selisih < 0 ? 'text-blue-800' : 'text-emerald-800'}">
+                ${calc ? (calc.selisih > 0 ? `+${formatRupiah(calc.selisih)} (Potensi Kurang Potong)` : calc.selisih < 0 ? `-${formatRupiah(Math.abs(calc.selisih))} (Potensi Lebih Potong)` : 'Rp 0 (Nihil / Sesuai)') : '-'}
+              </span>
+            </div>
+            <div class="text-[10px] text-slate-600 pt-1 border-t border-slate-200 leading-relaxed italic">
+              * Catatan: ${calc && calc.selisih > 0 
+                ? `Terdapat potensi kurang potong sebesar ${formatRupiah(calc.selisih)} akibat kenaikan lapisan tarif TER saat seluruh penghasilan digabung. Selisih ini akan diperhitungkan kembali pada masa pajak terakhir (Masa Desember / Akhir Periode) menggunakan Tarif Progresif Pasal 17 UU HPP.` 
+                : 'Pemotongan pajak bulanan telah sesuai dengan ketentuan akumulasi TER PP 58/2023.'}
+            </div>
+          </div>
+        </div>
+
+        <!-- BAGIAN V: PENGESAHAN / TANDA TANGAN -->
+        <div class="grid grid-cols-2 gap-8 text-center text-xs pt-4 border-t border-slate-300">
+          <div>
+            <div class="text-slate-500 mb-12">Pegawai ASN yang Bersangkutan,</div>
+            <div class="font-bold underline text-slate-900">${p.nama || '( .................................................... )'}</div>
+            <div class="text-[10px] text-slate-500 font-mono mt-0.5">NIP: ${p.nip || '-'}</div>
+          </div>
+          <div>
+            <div class="text-slate-500 mb-12">
+              ${p.instansi?.kota_penandatangan || 'Salatiga'}, ${formatDateIndo()}<br/>
+              Bendahara Pengeluaran / Pengelola Gaji,
+            </div>
+            <div class="font-bold underline text-slate-900">${p.instansi?.nama_bendahara_utama || '( .................................................... )'}</div>
+            <div class="text-[10px] text-slate-500 font-mono mt-0.5">NIP: ${p.instansi?.nip_bendahara_utama || '-'}</div>
+          </div>
+        </div>
+
       </div>
     </div>
   `;

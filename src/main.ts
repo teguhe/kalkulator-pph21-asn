@@ -460,10 +460,63 @@ function attachTerBulananListeners(): void {
     appState.clearTerBulanan();
   });
 
-  // Print Button
-  document.getElementById('btn-ter-print')?.addEventListener('click', () => {
+  // Print and Download Handlers for TER Bulanan
+  const handlePrintTer = () => {
+    // Sinkronisasi input langsung dari DOM jika kotor atau belum dihitung
+    if (appState.isTerBulananDirty || !appState.getTerBulananCalculation()) {
+      const p1 = parseFormattedNumber((document.getElementById('ter-input-p1') as HTMLInputElement)?.value || '0');
+      const p2 = parseFormattedNumber((document.getElementById('ter-input-p2') as HTMLInputElement)?.value || '0');
+      const p3 = parseFormattedNumber((document.getElementById('ter-input-p3') as HTMLInputElement)?.value || '0');
+      const p4 = parseFormattedNumber((document.getElementById('ter-input-p4') as HTMLInputElement)?.value || '0');
+
+      appState.updateTerBulananKomponen('penghasilan_1', 'bruto', p1, false);
+      appState.updateTerBulananKomponen('penghasilan_2', 'bruto', p2, false);
+      appState.updateTerBulananKomponen('penghasilan_3', 'bruto', p3, false);
+      appState.updateTerBulananKomponen('penghasilan_4', 'bruto', p4, false);
+
+      appState.calculateTerBulananWithQuota();
+    }
     window.print();
-  });
+  };
+
+  document.getElementById('btn-ter-print')?.addEventListener('click', handlePrintTer);
+  document.getElementById('btn-ter-print-bottom')?.addEventListener('click', handlePrintTer);
+
+  const handleDownloadTerHtml = () => {
+    const container = document.getElementById('ter-print-container');
+    if (!container) return;
+    const safeName = (appState.dataset.pegawai.nama || 'ASN').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const title = `Ringkasan_PPh21_TER_Bulanan_${safeName}`;
+    const htmlContent = `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>${title}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @page { size: A4 portrait; margin: 10mm 12mm; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; padding: 20px; }
+    @media print { body { background: white; padding: 0; } }
+  </style>
+</head>
+<body class="flex justify-center">
+  <div style="max-width: 800px; width: 100%;">
+    ${container.outerHTML}
+  </div>
+</body>
+</html>`;
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+    appState.showToast('success', 'File Diunduh', `Lembar ringkasan TER bulanan (${safeName}) telah diunduh sebagai ${a.download}.`);
+  };
+
+  document.getElementById('btn-ter-download-html')?.addEventListener('click', handleDownloadTerHtml);
+  document.getElementById('btn-ter-download-html-bottom')?.addEventListener('click', handleDownloadTerHtml);
 }
 
 function attachPegawaiListeners(): void {
