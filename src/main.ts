@@ -373,6 +373,100 @@ function attachEventListeners(): void {
   }
 }
 
+// Helper to print a specific container using an isolated hidden iframe
+function printDocument(containerId: string, docTitle: string): void {
+  const container = document.getElementById(containerId);
+  if (!container) {
+    window.print();
+    return;
+  }
+
+  // Create or reuse hidden isolated print iframe
+  let iframe = document.getElementById('app-print-frame') as HTMLIFrameElement;
+  if (!iframe) {
+    iframe = document.createElement('iframe');
+    iframe.id = 'app-print-frame';
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.style.visibility = 'hidden';
+    document.body.appendChild(iframe);
+  }
+
+  // Gather stylesheet tags and inline styles from current head
+  let styleTags = '';
+  document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
+    styleTags += el.outerHTML;
+  });
+
+  const frameDoc = iframe.contentWindow?.document;
+  if (!frameDoc) {
+    window.print();
+    return;
+  }
+
+  frameDoc.open();
+  frameDoc.write(`<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>${docTitle}</title>
+  ${styleTags}
+  <style>
+    *, *:before, *:after {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    @page {
+      size: A4 portrait;
+      margin: 10mm 12mm;
+    }
+    html, body {
+      background: white !important;
+      color: black !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      height: auto !important;
+      overflow: visible !important;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    #${containerId} {
+      display: block !important;
+      visibility: visible !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+      box-shadow: none !important;
+      background: white !important;
+      color: black !important;
+    }
+  </style>
+</head>
+<body class="bg-white p-0 m-0">
+  <div style="width: 100%; max-width: 100%;">
+    ${container.outerHTML}
+  </div>
+</body>
+</html>`);
+  frameDoc.close();
+
+  setTimeout(() => {
+    try {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    } catch (e) {
+      console.warn('Iframe print error, falling back to window.print', e);
+      window.print();
+    }
+  }, 250);
+}
+
 function attachTerBulananListeners(): void {
   // Sync Pegawai text inputs (Nama & NIP)
   const elNama = document.getElementById('ter-pegawai-nama') as HTMLInputElement;
@@ -460,10 +554,22 @@ function attachTerBulananListeners(): void {
     appState.clearTerBulanan();
   });
 
+  // Month selector for TER Bulanan
+  const elSelectMonth = document.getElementById('ter-select-month') as HTMLSelectElement;
+  elSelectMonth?.addEventListener('change', (e) => {
+    const m = parseInt((e.target as HTMLSelectElement).value, 10);
+    appState.setActiveMonth(m);
+  });
+
+  // Load from Form 2 button
+  document.getElementById('btn-ter-load-from-form2')?.addEventListener('click', () => {
+    appState.loadMonthIntoTerBulanan(appState.activeMonth);
+  });
+
   // Print and Download Handlers for TER Bulanan
   const handlePrintTer = () => {
     // Sinkronisasi input langsung dari DOM jika kotor atau belum dihitung
-    if (appState.isTerBulananDirty || !appState.getTerBulananCalculation()) {
+    if (appState.isTerBulananDirty) {
       const p1 = parseFormattedNumber((document.getElementById('ter-input-p1') as HTMLInputElement)?.value || '0');
       const p2 = parseFormattedNumber((document.getElementById('ter-input-p2') as HTMLInputElement)?.value || '0');
       const p3 = parseFormattedNumber((document.getElementById('ter-input-p3') as HTMLInputElement)?.value || '0');
@@ -476,7 +582,12 @@ function attachTerBulananListeners(): void {
 
       appState.calculateTerBulananWithQuota();
     }
-    window.print();
+
+    const safeName = (appState.dataset.pegawai.nama || 'ASN').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const title = `Ringkasan_PPh21_TER_Bulanan_${safeName}`;
+    setTimeout(() => {
+      printDocument('ter-print-container', title);
+    }, 120);
   };
 
   document.getElementById('btn-ter-print')?.addEventListener('click', handlePrintTer);
@@ -742,7 +853,11 @@ function attachBpa2Listeners(): void {
 
   const btnPrint = document.getElementById('btn-print-bpa2');
   btnPrint?.addEventListener('click', () => {
-    window.print();
+    const ap = appState.getActiveBpa2Result();
+    const masaSuffix = ap ? `_Masa_${ap.kode_masa.replace(/\s+/g, '')}` : '';
+    const safeName = (appState.dataset.pegawai.nama || 'ASN').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const title = `Formulir_1721_BPA2_${safeName}${masaSuffix}`;
+    printDocument('bpa2-print-container', title);
   });
 
   const btnLoadDummy = document.getElementById('btn-bpa2-load-dummy');

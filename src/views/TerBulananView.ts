@@ -10,7 +10,8 @@ export function renderTerBulananView(): string {
 
   const currentYear = new Date().getFullYear();
   const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-  const currentMonthName = months[new Date().getMonth()];
+  const selectedMonthNum = appState.activeMonth || (new Date().getMonth() + 1);
+  const selectedMonthName = months[selectedMonthNum - 1] || 'Januari';
 
   // Opsi PTKP Dropdown (Sama dengan Form 1)
   const ptkpOptionsHtml = Object.keys(PTKP_MAP).map(key => {
@@ -228,6 +229,28 @@ export function renderTerBulananView(): string {
               Input 4 Komponen Penghasilan Bulanan
             </h3>
             <p class="text-[11px] text-slate-500">Masukkan nominal penghasilan bruto yang diterima dalam 1 bulan kalender</p>
+          </div>
+        </div>
+
+        <!-- Month Selector & Load from Form 2 toolbar -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-slate-700">Masa Pajak:</span>
+            <select id="ter-select-month" class="px-2.5 py-1.5 text-xs font-bold border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 outline-none text-slate-800 cursor-pointer">
+              ${months.map((mName, idx) => `
+                <option value="${idx + 1}" ${selectedMonthNum === (idx + 1) ? 'selected' : ''}>
+                  Bulan ${idx + 1} (${mName})
+                </option>
+              `).join('')}
+            </select>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-ter-load-from-form2" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 text-emerald-800 border border-emerald-300 transition cursor-pointer shadow-xs" title="Tarik data 4 komponen penghasilan bulan ini dari Form 2">
+              <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              <span>Tarik Data dari Form 2 (Bulan ${selectedMonthNum})</span>
+            </button>
           </div>
         </div>
 
@@ -599,7 +622,7 @@ export function renderTerBulananView(): string {
               </div>
             </div>
             <div class="text-right text-[10px] font-mono text-slate-600 shrink-0 border-l border-slate-200 pl-3">
-              <div>Masa: <strong>${currentMonthName} ${currentYear}</strong></div>
+              <div>Masa: <strong>${selectedMonthName} ${currentYear}</strong></div>
               <div>Tanggal Cetak: <strong>${formatDateIndo()}</strong></div>
               <div>Kategori: <strong>TER ${p.kategori_ter}</strong></div>
             </div>
@@ -608,7 +631,7 @@ export function renderTerBulananView(): string {
 
         <!-- BAGIAN I: IDENTITAS PEGAWAI & PARAMETER TER -->
         <div>
-          <div class="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-1.5 flex items-center justify-between">
+          <div class="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-1.5 flex items-center justify-between border border-slate-900">
             <span>I. IDENTITAS PEGAWAI &amp; PARAMETER PAJAK</span>
             <span class="text-[10px] text-slate-300 font-normal">Data Pegawai ASN</span>
           </div>
@@ -650,7 +673,7 @@ export function renderTerBulananView(): string {
 
         <!-- BAGIAN II: RINCIAN PENGHASILAN DAN PEMOTONGAN TERPISAH (PARSIAL) -->
         <div>
-          <div class="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-1.5 flex items-center justify-between">
+          <div class="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-1.5 flex items-center justify-between border border-slate-900">
             <span>II. RINCIAN PENGHASILAN &amp; PEMOTONGAN PARSIAL (OLEH MASING-MASING BENDAHARA)</span>
             <span class="text-[10px] text-slate-300 font-normal">Pemotongan Terpisah</span>
           </div>
@@ -705,7 +728,7 @@ export function renderTerBulananView(): string {
 
         <!-- BAGIAN III: PENGHITUNGAN PPh 21 TER GABUNGAN SEBULAN (KETENTUAN RESMI PMK 168/2023) -->
         <div>
-          <div class="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-1.5 flex items-center justify-between">
+          <div class="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-1.5 flex items-center justify-between border border-slate-900">
             <span>III. PENGHITUNGAN PPh 21 TER GABUNGAN SEBULAN (KETENTUAN PMK 168/2023)</span>
             <span class="text-[10px] text-slate-300 font-normal">Tarif Akumulasi Masa Sebulan</span>
           </div>
@@ -735,7 +758,7 @@ export function renderTerBulananView(): string {
 
         <!-- BAGIAN IV: ANALISIS & KOMPARASI SELISIH FISKAL -->
         <div>
-          <div class="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-1.5 flex items-center justify-between">
+          <div class="bg-slate-800 text-white px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-1.5 flex items-center justify-between border border-slate-900">
             <span>IV. ANALISIS &amp; KOMPARASI SELISIH FISKAL</span>
             <span class="text-[10px] text-slate-300 font-normal">Potensi Kurang / Lebih Bayar</span>
           </div>

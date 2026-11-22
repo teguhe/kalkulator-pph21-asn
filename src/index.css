@@ -8,27 +8,77 @@
 
 /* Print styles for BPA2 & TER Bulanan */
 @media print {
-  body * {
-    visibility: hidden;
+  /* Force exact color reproduction for backgrounds & text contrast */
+  *, *:before, *:after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
-  #bpa2-print-container, #bpa2-print-container *,
-  #ter-print-container, #ter-print-container * {
-    visibility: visible;
-  }
-  #bpa2-print-container, #ter-print-container {
-    display: block !important;
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    background: white;
-    color: black;
-  }
-  .no-print {
+
+  /* Hide all non-printable chrome and interactive wrappers */
+  .no-print,
+  header,
+  aside,
+  footer,
+  nav,
+  #sidebar-backdrop,
+  #toast-container,
+  #modal-login,
+  #modal-auth-profile,
+  #modal-validation-error,
+  .modal-backdrop,
+  [role="dialog"] {
     display: none !important;
   }
+
+  /* Reset document and viewport layout to standard flow */
+  html, body {
+    background: white !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Reset main app wrappers so they flow naturally without flex/clipping */
+  #app,
+  #app > div,
+  main {
+    display: block !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0 !important;
+  }
+
+  /* Print containers format cleanly as standard page flow */
+  #bpa2-print-container,
+  #ter-print-container {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 10px 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
+    color: black !important;
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
   @page {
     size: A4 portrait;
     margin: 10mm 12mm;

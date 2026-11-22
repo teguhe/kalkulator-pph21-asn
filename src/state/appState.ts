@@ -446,7 +446,11 @@ class AppState {
     };
   }
 
-  public getTerBulananCalculation(): HasilTerBulananPerhitungan | null {
+  public getTerBulananCalculation(): HasilTerBulananPerhitungan {
+    if (!this.terBulananCalculation) {
+      this.terBulananCalculation = this.computeTerBulanan();
+      this.saveTerBulananCalcToStorage();
+    }
     return this.terBulananCalculation;
   }
 
@@ -558,11 +562,11 @@ class AppState {
     this.terBulananInput.penghasilan_4.bruto = kp.penghasilan_4.bruto || 0;
     this.terBulananInput.penghasilan_4.nama = kp.penghasilan_4.label || 'Penghasilan Lainnya 2 (Honorarium Kegiatan)';
 
-    this.terBulananCalculation = null;
-    this.isTerBulananDirty = true;
+    this.terBulananCalculation = this.computeTerBulanan();
+    this.isTerBulananDirty = false;
     this.saveTerBulananToStorage();
     this.saveTerBulananCalcToStorage();
-    this.showToast('info', 'Data Dimuat', `Data 4 penghasilan dari Bulan ${b.nama_bulan} dimuat. Klik tombol "Hitung PPh 21 Bulanan" untuk memproses pajak.`);
+    this.showToast('info', 'Data Dimuat', `Data 4 penghasilan dari Bulan ${b.nama_bulan} dimuat dan dihitung otomatis.`);
     this.notify();
   }
 
@@ -573,11 +577,11 @@ class AppState {
       penghasilan_3: { id: 'p3', nama: 'Penghasilan Lainnya 1 (Upah Pungut)', bruto: 1500000, keterangan: 'Bendahara Bapenda' },
       penghasilan_4: { id: 'p4', nama: 'Penghasilan Lainnya 2 (Honorarium Pokja)', bruto: 1000000, keterangan: 'Bendahara Panitia Kegiatan' },
     };
-    this.terBulananCalculation = null;
-    this.isTerBulananDirty = true;
+    this.terBulananCalculation = this.computeTerBulanan();
+    this.isTerBulananDirty = false;
     this.saveTerBulananToStorage();
     this.saveTerBulananCalcToStorage();
-    this.showToast('info', 'Sampel TER Bulanan Dimuat', 'Data simulasi 4 komponen penghasilan ASN dimuat. Klik tombol "Hitung PPh 21 Bulanan" untuk memproses perhitungan.');
+    this.showToast('info', 'Sampel TER Bulanan Dimuat', 'Data simulasi 4 komponen penghasilan ASN dimuat dan dihitung otomatis.');
     this.notify();
   }
 
@@ -586,7 +590,7 @@ class AppState {
     this.terBulananInput.penghasilan_2.bruto = 0;
     this.terBulananInput.penghasilan_3.bruto = 0;
     this.terBulananInput.penghasilan_4.bruto = 0;
-    this.terBulananCalculation = null;
+    this.terBulananCalculation = this.computeTerBulanan();
     this.isTerBulananDirty = false;
     this.saveTerBulananToStorage();
     this.saveTerBulananCalcToStorage();
@@ -651,7 +655,10 @@ class AppState {
       penghasilan_3: { id: 'p3', nama: 'Penghasilan Lainnya 1 (Upah Pungut)', bruto: 1500000, keterangan: 'Bendahara Bapenda' },
       penghasilan_4: { id: 'p4', nama: 'Penghasilan Lainnya 2 (Honorarium Pokja)', bruto: 1000000, keterangan: 'Bendahara Panitia Kegiatan' },
     };
+    this.terBulananCalculation = this.computeTerBulanan();
+    this.isTerBulananDirty = false;
     this.saveTerBulananToStorage();
+    this.saveTerBulananCalcToStorage();
     this.recalculateTax(false);
     this.saveDatasetToStorage();
     logService.recordLog('IMPORT', `Memuat data template dummy bawaan ASN: ${this.dataset.pegawai.nama} (NIK: ${this.dataset.pegawai.nik || '-'})`, {
@@ -674,7 +681,10 @@ class AppState {
 
     this.dataset = createEmptyDataset();
     this.terBulananInput = createDefaultTerBulananInput();
+    this.terBulananCalculation = this.computeTerBulanan();
+    this.isTerBulananDirty = false;
     this.saveTerBulananToStorage();
+    this.saveTerBulananCalcToStorage();
     this.recalculateTax(false);
     this.saveDatasetToStorage();
     this.showToast('info', 'Data Dikosongkan', 'Semua isian telah direset ke data kosong baru.');
